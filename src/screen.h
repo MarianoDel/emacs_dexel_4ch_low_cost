@@ -2,7 +2,6 @@
 // ## @Author: Med
 // ## @Editor: Emacs - ggtags
 // ## @TAGS:   Global
-// ## @CPU:    STM32F303
 // ##
 // #### SCREEN.H ##############################
 //---------------------------------------------
@@ -16,7 +15,6 @@
 // Common Defines --------------------------------------------------------------
 #define SCREEN_Text4_Line1(X)    SCREEN_Font_Line_Text((4),(1),(X))
 #define SCREEN_Text4_Line2(X)    SCREEN_Font_Line_Text((4),(2),(X))
-
 
 #define SCREEN_Text2_Line1(X)    SCREEN_Font_Line_Text((2),(1),(X))
 #define SCREEN_Text2_Line2(X)    SCREEN_Font_Line_Text((2),(2),(X))
@@ -36,10 +34,5 @@ void SCREEN_ShowText2 (char *, char *, char *, char *);
 
 void SCREEN_Font_Line_Text (unsigned char f, unsigned char l, char * text);
 void SCREEN_Font_BlankLine (unsigned char f, unsigned char l);
-
-// void SCREEN_Text2_BlankLine1 (void);
-// void SCREEN_Text2_BlankLine2 (void);
-// void SCREEN_Text2_BlankLine3 (void);
-// void SCREEN_Text2_BlankLine4 (void);
 
 #endif    /* _SCREEN_H_ */

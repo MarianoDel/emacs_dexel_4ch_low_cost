@@ -8,7 +8,7 @@
 #include "tests_oled_application.h"
 
 // Application Includes needed for this test
-#include "screen1.h"
+#include "screen.h"
 
 
 // Module Types Constants and Macros -------------------------------------------
@@ -36,14 +36,8 @@ gboolean Test_Main_Loop (gpointer user_data)
     {
         setup_done = 1;
 
-        // Start i2c and oled screen
-        // I2C2_Init();
-
-        //primer pantalla
-        // Led_On();
         SCREEN_Init();
-        // Led_Off();
-    
+
         SCREEN_Clear ();        
         SCREEN_Text2_Line1 ("Infinity  ");    
         SCREEN_Text2_Line2 ("  Clinics ");
@@ -62,6 +56,7 @@ gboolean Test_Main_Loop (gpointer user_data)
     if (setup_done == 2)
     {
         setup_done = 3;
+        SCREEN_Clear ();
         //second screen
         // SCREEN_ShowText2(
         //     "         ",
@@ -84,12 +79,12 @@ gboolean Test_Main_Loop (gpointer user_data)
     {
         setup_done = 5;
         //second screen
-        SCREEN_ShowText2(
-            "         ",
-            "         ",
-            "         ",
-            "         "
-            );
+        // SCREEN_ShowText2(
+        //     "         ",
+        //     "         ",
+        //     "         ",
+        //     "         "
+        //     );
         
         timer_standby = 1300;
     }
@@ -208,4 +203,8 @@ void set_button_function (void)
 // }
 
 
+// Mocked Func
+void Wait_ms (unsigned short ms)
+{
+}
 //--- end of file ---//
