@@ -264,7 +264,7 @@ tests_oled_screen:
 	gcc -c src/ssd1306_display.c -I. $(INCDIR)
 	gcc -c src/ssd1306_gfx.c -I. $(INCDIR)
 	# the module that implements tests_lcd_application.h functions
-	gcc -c `pkg-config --cflags gtk+-3.0` src/tests_oled_app.c -o tests_oled_app.o
+	gcc -c `pkg-config --cflags gtk+-3.0` src/tests_oled_app.c -o tests_oled_app.o -Wno-error=implicit-function-declaration
 	# then the gtk lib modules
 	gcc -c `pkg-config --cflags gtk+-3.0` src/tests_glade_oled.c -o tests_glade_oled.o
 	# link everything
