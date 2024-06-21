@@ -14,7 +14,7 @@
 
 #include <string.h>
 
-#include "dmx_receiver.h"
+// #include "dmx_receiver.h"
 
 // Module Private Types Constants and Macros -----------------------------------
 #define USART1_CLK    (RCC->APBENR2 & 0x00004000)
@@ -206,26 +206,26 @@ void USART1_IRQHandler(void)
     {
         dummy = USART1->RDR & 0x0FF;
 
-        if (usart1_mode == USART_IN_DMX_MODE)
-            DMX_Int_Serial_Receiver_Handler (dummy);
-        else if (usart1_mode == USART_IN_MANUAL_MODE)
-        {
-            if (prx1 < &rx1buff[SIZEOF_DATA - 1])
-            {
-                if (dummy == '\n')
-                {
-                    *prx1 = '\0';
-                    usart1_have_data = 1;
-                }
-                else
-                {
-                    *prx1 = dummy;
-                    prx1++;
-                }
-            }
-            else
-                prx1 = rx1buff;    // fixes blocked with garbage problem
-        }
+        // if (usart1_mode == USART_IN_DMX_MODE)
+        //     DMX_Int_Serial_Receiver_Handler (dummy);
+        // else if (usart1_mode == USART_IN_MANUAL_MODE)
+        // {
+        //     if (prx1 < &rx1buff[SIZEOF_DATA - 1])
+        //     {
+        //         if (dummy == '\n')
+        //         {
+        //             *prx1 = '\0';
+        //             usart1_have_data = 1;
+        //         }
+        //         else
+        //         {
+        //             *prx1 = dummy;
+        //             prx1++;
+        //         }
+        //     }
+        //     else
+        //         prx1 = rx1buff;    // fixes blocked with garbage problem
+        // }
     }
 
     // USART in Tx mode --------------------------------------------------

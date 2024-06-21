@@ -19,9 +19,8 @@
 #include "tim.h"
 #include "flash_program.h"
 
-#include "lcd_utils.h"
-#include "dmx_receiver.h"
-#include "temperatures.h"
+// #include "dmx_receiver.h"
+// #include "temperatures.h"
 
 
 #include <stdio.h>
@@ -48,52 +47,41 @@ extern volatile unsigned short adc_ch [];
 
 
 // Module Private Functions ----------------------------------------------------
-void TF_Led_Lock (void);
 void TF_Led (void);
-void TF_lcdE (void);
-void TF_lcdRS (void);
-void TF_lcdBklight (void);
-void TF_lcdData (void);
-void TF_lcdBlink (void);
-void TF_lcdScroll (void);
+void TF_S1 (void);
+void TF_S2 (void);
+
+void TF_S1_S2_Fan(void);
+
+void TF_Usart2_Tx (void);
+void TF_Usart2_Tx_Rx (void);
+
 void TF_MenuFunction (void);
 void TF_Dmx_Break_Detect (void);
 void TF_Dmx_Packet (void);
 void TF_Dmx_Packet_Data (void);
 void TF_Temp_Channel (void);
 
-#ifdef HARDWARE_VERSION_2_0
-void TF_SW_UP (void);
-void TF_SW_DWN (void);
-void TF_SW_SEL (void);
-#endif
-
-#ifdef HARDWARE_VERSION_2_1
-void TF_CheckCCW (void);
-void TF_CheckCW (void);
-void TF_CheckSET (void);
-#endif
 
 
 // Module Functions ------------------------------------------------------------
 void TF_Hardware_Tests (void)
 {
     // TF_Led ();    //simple led functionality
-    // TF_SW_UP();
-    // TF_SW_DWN();
-    // TF_SW_SEL();    
-    // TF_lcdE();
-    // TF_lcdRS();
-    // TF_lcdBklight();    
-    // TF_lcdData();
-    // TF_lcdBlink();
-    // TF_lcdScroll();
+    // TF_S1();
+    // TF_S2();
+
+    // TF_S1_S2_Fan();
+
+    // TF_Usart2_Tx ();
+    TF_Usart2_Tx_Rx ();
+
     // TF_Dmx_Break_Detect ();
     // TF_Dmx_Packet ();    
     // TF_Dmx_Packet_Data ();
     // TF_Temp_Channel ();    
 
-    TF_CheckSET ();
+    // TF_CheckSET ();
     // TF_CheckCCW ();
     // TF_CheckCW ();
     
@@ -114,140 +102,91 @@ void TF_Led (void)
 }
 
 
-void TF_lcdE (void)
+void TF_S1 (void)
 {
     while (1)
     {
-        if (LCD_E)
-            LCD_E_OFF;
+        if (S1)
+            LED_ON;
         else
-            LCD_E_ON;
-
-        Wait_ms(10);
-    }
+            LED_OFF;
+    }    
 }
 
 
-void TF_lcdRS (void)
+void TF_S2 (void)
 {
     while (1)
     {
-        if (LCD_RS)
-            LCD_RS_OFF;
+        if (S2)
+            LED_ON;
         else
-            LCD_RS_ON;
-
-        Wait_ms(10);
-    }
+            LED_OFF;
+    }    
 }
 
 
-void TF_lcdBklight (void)
+void TF_S1_S2_Fan(void)
 {
     while (1)
     {
-        if (CTRL_BKL)
-            CTRL_BKL_OFF;
-        else
-            CTRL_BKL_ON;
-
-        Wait_ms(1000);
+	if (S1 || S2)
+	{
+	    LED_ON;
+	    CTRL_FAN_ON;
+	}
+	else
+	{
+	    LED_OFF;
+	    CTRL_FAN_OFF;
+	}
     }
 }
 
 
-void TF_lcdData (void)
+void TF_Usart2_Tx (void)
 {
-    while (1)
-    {
-        //pa4 a pa7        
-        GPIOA->BSRR = 0x000000F0;
-        for (int i = 0; i < 5; i++)
-        {
-            LED_ON;
-            Wait_ms(100);
-            LED_OFF;
-            Wait_ms(1400);
-        }        
-        GPIOA->BSRR = 0x00F00000;
-
-        Wait_ms(2000);
-
-        GPIOA->BSRR = 0x00000050;
-        for (int i = 0; i < 5; i++)
-        {
-            LED_ON;
-            Wait_ms(100);
-            LED_OFF;
-            Wait_ms(100);            
-            LED_ON;
-            Wait_ms(100);
-            LED_OFF;
-            Wait_ms(1200);
-        }        
-        GPIOA->BSRR = 0x00500000;
-        
-        Wait_ms(2000);
-
-        GPIOA->BSRR = 0x000000A0;
-        for (int i = 0; i < 5; i++)
-        {
-            LED_ON;
-            Wait_ms(100);
-            LED_OFF;
-            Wait_ms(100);            
-            LED_ON;
-            Wait_ms(100);
-            LED_OFF;
-            Wait_ms(100);            
-            LED_ON;
-            Wait_ms(100);
-            LED_OFF;
-            Wait_ms(1000);
-        }
-        GPIOA->BSRR = 0x00A00000;
-        
-        Wait_ms(2000);
-    }
-}
-
-
-void TF_lcdBlink (void)
-{
-    // needs a timeout call to LCD_UpdateTimer()
-    LCD_UtilsInit();
-    CTRL_BKL_ON;
+    Wait_ms(100);
+    Usart2Config();
 
     while (1)
     {
-        while (LCD_ShowBlink("Kirno Technology",
-                             "  Smart Driver  ",
-                             2,
-                             BLINK_DIRECT) != resp_finish);
-
-        LCD_ClearScreen();
-        Wait_ms(1000);
+	Wait_ms(2000);
+	Usart2Send("Mariano\r\n");
     }
 }
 
 
-void TF_lcdScroll (void)
+void TF_Usart2_Tx_Rx (void)
 {
-   // needs a timeout call to LCD_UpdateTimer()
-    resp_t resp = resp_continue;
-
-    LCD_UtilsInit();
-    CTRL_BKL_ON;
+    char buff [100];
+    unsigned char len = 0;
+    
+    Wait_ms(100);
+    Usart2Config();
+    Wait_ms(100);
+    Usart2Send("\r\nUsart2 Tx Rx loopback test!\r\n");    
+    Wait_ms(100);
     
     while (1)
     {
-        // LCD_ClearScreen();
-        // Wait_ms(2000);
-        do {
-            resp = LCD_Scroll1 ("Dexel Lighting DMX 2 channels 8 amps controller.");
-        } while (resp != resp_finish);
+	if (Usart2HaveData())
+	{
+	    Usart2HaveDataReset();
+	    len = Usart2ReadBuffer(buff, 100);
+	    Usart2Send("\r\nnew buff: ");
+	}
 
-        Wait_ms(2000);
+	if (len)
+	{
+	    Wait_ms(2000);
+	    // len comes with '\0'
+	    buff[len - 1] = '\r';
+	    buff[len + 0] = '\n';
+	    buff[len + 1] = '\0';	    
+	    Usart2Send(buff);
+	    len = 0;
+	}
     }
 }
 
@@ -298,9 +237,9 @@ void TF_Dmx_Packet (void)
 void TF_Dmx_Packet_Data (void)
 {
     // Init LCD
-    LCD_UtilsInit();
-    CTRL_BKL_ON;
-    LCD_ClearScreen();
+    // LCD_UtilsInit();
+    // CTRL_BKL_ON;
+    // LCD_ClearScreen();
     Wait_ms(1000);
 
     // Init DMX
@@ -327,14 +266,14 @@ void TF_Dmx_Packet_Data (void)
                 if (dmx_data1 != dmx_buff_data[1])
                 {
                     sprintf(s_lcd, "ch1: %03d", dmx_buff_data[1]);
-                    LCD_Writel1(s_lcd);
+                    // LCD_Writel1(s_lcd);
                     dmx_data1 = dmx_buff_data[1];
                 }
 
                 if (dmx_data2 != dmx_buff_data[2])
                 {
                     sprintf(s_lcd, "ch2: %03d", dmx_buff_data[2]);
-                    LCD_Writel2(s_lcd);
+                    // LCD_Writel2(s_lcd);
                     dmx_data2 = dmx_buff_data[2];
                 }
             }
@@ -348,9 +287,9 @@ void TF_Dmx_Packet_Data (void)
 void TF_Temp_Channel (void)
 {
     // Init LCD
-    LCD_UtilsInit();
-    CTRL_BKL_ON;
-    LCD_ClearScreen();
+    // LCD_UtilsInit();
+    // CTRL_BKL_ON;
+    // LCD_ClearScreen();
     Wait_ms(1000);
 
     // Init ADC and DMA
@@ -364,7 +303,7 @@ void TF_Temp_Channel (void)
     while (1)
     {
         Wait_ms (500);
-        LCD_ClearScreen ();
+        // LCD_ClearScreen ();
         
         temp_degrees = Temp_TempToDegrees(Temp_Channel);
         
@@ -372,65 +311,14 @@ void TF_Temp_Channel (void)
                 Temp_Channel,
                 temp_degrees);
 
-        LCD_Writel1(s_lcd);
+        // LCD_Writel1(s_lcd);
 
         sprintf(s_lcd, "convert: %04d",
                 Temp_DegreesToTemp(temp_degrees));
 
-        LCD_Writel2(s_lcd);
+        // LCD_Writel2(s_lcd);
     }
 }
 
 
-#ifdef HARDWARE_VERSION_2_0
-void TF_SW_UP (void)
-{
-    while (1)
-    {
-        if (SW_UP)
-            LED_ON;
-        else
-            LED_OFF;
-    }    
-}
-
-
-void TF_SW_SEL (void)
-{
-    while (1)
-    {
-        if (SW_SEL)
-            LED_ON;
-        else
-            LED_OFF;
-    }    
-}
-
-
-void TF_SW_DWN (void)
-{
-    while (1)
-    {
-        if (SW_DWN)
-            LED_ON;
-        else
-            LED_OFF;
-    }    
-}
-#endif
-
-#ifdef HARDWARE_VERSION_2_1
-void TF_CheckSET (void)
-{
-    while (1)
-    {
-        if (CheckSET() > SW_NO)
-            LED_ON;
-        else
-            LED_OFF;
-
-        UpdateSwitches();
-    }    
-}
-#endif
 //--- end of file ---//
