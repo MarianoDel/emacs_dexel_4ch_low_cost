@@ -24,7 +24,7 @@
 #include "flash_program.h"
 
 #include "test_functions.h"
-// #include "dmx_receiver.h"
+#include "dmx_receiver.h"
 // #include "temperatures.h"
 
 // #include "dmx_mode.h"
@@ -67,7 +67,7 @@ parameters_typedef * pflash_mem = (parameters_typedef *) (unsigned int *) FLASH_
 parameters_typedef mem_conf;
 
 // - Externals for DMX receiver
-// volatile unsigned char dmx_buff_data[SIZEOF_DMX_BUFFER_DATA];
+volatile unsigned char dmx_buff_data[SIZEOF_DMX_BUFFER_DATA];
 volatile unsigned char Packet_Detected_Flag = 0;
 volatile unsigned short DMX_channel_selected = 0;
 volatile unsigned char DMX_channel_quantity = 0;
@@ -657,7 +657,7 @@ unsigned char CheckTempGreater (unsigned short temp_sample, unsigned short temp_
 
 void EXTI4_15_IRQHandler(void)
 {
-    // DMX_Int_Break_Handler();
+    DMX_Int_Break_Handler();
     EXTI->RPR1 |= 0x00000100;    //PA8 on rising
     EXTI->FPR1 |= 0x00000100;    //PA8 on falling
 }
@@ -677,7 +677,7 @@ void TimingDelay_Decrement(void)
 
     HARD_Timeouts();
 
-    // DMX_Int_Millis_Handler ();
+    DMX_Int_Millis_Handler ();
     
     // Modes Menus Timers
     if (ptFTT != NULL)

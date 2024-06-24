@@ -455,9 +455,6 @@ void display_update_int_state_machine (void)
 
     case DISPLAY_UPDATE_ENDED:
     default:
-#ifdef USE_CTRL_FAN_FOR_DISPLAY_SM_UPDATE_ON_START_END
-        CTRL_FAN_OFF;
-#endif
         break;
     }
 #endif
@@ -474,7 +471,6 @@ unsigned char display_is_free (void)
 }
 
 
-extern void Wait_ms (unsigned short wait);
 void display_update (void)
 {
 #ifdef OLED_128_64
@@ -539,22 +535,18 @@ void display_update (void)
         cmd[0] = 0x00;
         cmd[1] = 0x02;    //page addr 0
         display_write_buf( cmd, sizeof(cmd) );
-        Wait_ms(1);
         
         cmd[0] = 0x00;
         cmd[1] = 0x10;    //page addr 0
         display_write_buf( cmd, sizeof(cmd) ); 
-        Wait_ms(1);
         
         //seteo la pagina
         cmd[1] = 0xB0 | page;
         display_write_buf( cmd, sizeof(cmd) ); 
-        Wait_ms(1);
         
         datab[0] = 0x40;
         memcpy(datab + 1, SSD1306_buffer + 1 + page * 128, 128);
         display_write_buf( datab, sizeof(datab) );
-        Wait_ms(1);        
     }
 #endif
 #endif

@@ -14,7 +14,7 @@
 
 #include <string.h>
 
-// #include "dmx_receiver.h"
+#include "dmx_receiver.h"
 
 // Module Private Types Constants and Macros -----------------------------------
 #define USART1_CLK    (RCC->APBENR2 & 0x00004000)
@@ -25,15 +25,20 @@
 #define USART2_CLK_ON    (RCC->APBENR1 |= 0x00020000)
 #define USART2_CLK_OFF    (RCC->APBENR1 &= ~0x00020000)
 
+// USART with PCKL 32MHz or PCKL 64MHz
+#define USART_PCKL32M
+// #define USART_PCKL64M
+
+#ifdef USART_PCKL64M
 #define USART_64MHz_9600    6666
 #define USART_64MHz_115200    555
 #define USART_64MHz_250000    256
-#define USART_16MHz_9600    1666
-#define USART_115200    416
-#define USART_250000    192
-
-#define USART_IN_DMX_MODE    0
-#define USART_IN_MANUAL_MODE    1
+#endif
+#ifdef USART_PCKL32M
+#define USART_64MHz_9600    3333
+#define USART_64MHz_115200    277
+#define USART_64MHz_250000    128
+#endif
 
 
 // Externals -------------------------------------------------------------------
@@ -54,8 +59,6 @@ volatile unsigned char * prx2;
 volatile unsigned char tx2buff[SIZEOF_DATA];
 volatile unsigned char rx2buff[SIZEOF_DATA];
 
-volatile unsigned char usart1_mode = USART_IN_DMX_MODE;
-// unsigned char usart_debug_level = 0;
 
 // Module Private Functions ----------------------------------------------------
 
@@ -71,78 +74,23 @@ void Usart1Config(void)
     if (!USART1_CLK)
         USART1_CLK_ON;
 
-    // Usart1 9600 8N1 fifo disabled oversampled 16
-#ifdef CLOCK_FREQ_16_MHZ    // PCKL 16MHz
-    USART1->BRR = USART_16MHz_9600;
-#endif
-#ifdef CLOCK_FREQ_64_MHZ    // PCKL 64MHz
-    USART1->BRR = USART_64MHz_9600;
-#endif
-    // USART1->CR2 |= USART_CR2_STOP_1;	//2 bits stop
-    // USART1->CR1 = USART_CR1_RE | USART_CR1_TE | USART_CR1_UE;
-    // USART1->CR1 = USART_CR1_RXNEIE | USART_CR1_RE | USART_CR1_UE;	//SIN TX
-    USART1->CR1 = USART_CR1_RXNEIE_RXFNEIE | USART_CR1_RE | USART_CR1_TE | USART_CR1_UE;    //Rx int + Tx
-
-    unsigned int temp;
-    temp = GPIOA->AFR[1];
-    temp &= 0xFFFFF00F;
-    temp |= 0x00000110;    //PA10 -> AF1 PA9 -> AF1
-    GPIOA->AFR[1] = temp;
-
-    ptx1 = tx1buff;
-    ptx1_pckt_index = tx1buff;
-    prx1 = rx1buff;
-    
-    NVIC_EnableIRQ(USART1_IRQn);
-    NVIC_SetPriority(USART1_IRQn, 5);
-}
-
-
-void Usart1Enable_PA10_250000 (void)
-{
-    usart1_mode = USART_IN_DMX_MODE;
-    
-    USART1->CR1 &= ~(USART_CR1_UE);    //disable
+    // Usart1 250000 8N2 fifo disabled oversampled 16
     USART1->BRR = USART_64MHz_250000;
     USART1->CR2 |= USART_CR2_STOP_1;	//2 bits stop
 
-    unsigned int temp;
-    temp = GPIOA->MODER;    //2 bits por pin
-    temp &= 0xFFCFFFFF;    //PA10 alternative
-    temp |= 0x00200000;    //
-    GPIOA->MODER = temp;
-
-    temp = GPIOB->MODER;    //2 bits por pin
-    temp &= 0xFFFF3FFF;    //PB7 input
-    temp |= 0x00000000;    //
-    GPIOB->MODER = temp;
-
-    USART1->CR1 = USART_CR1_RXNEIE_RXFNEIE | USART_CR1_RE | USART_CR1_UE;	//no TX
-    
-}
-
-
-void Usart1Enable_PB7_9600 (void)
-{
-    usart1_mode = USART_IN_MANUAL_MODE;
-    
-    USART1->CR1 &= ~(USART_CR1_UE);    //disable
-    USART1->BRR = USART_64MHz_9600;
-    USART1->CR2 &= ~(USART_CR2_STOP_1);	//1 bits stop
+    // USART1->CR1 = USART_CR1_RE | USART_CR1_TE | USART_CR1_UE;
+    // USART1->CR1 = USART_CR1_RXNEIE | USART_CR1_RE | USART_CR1_UE;	//SIN TX
+    // USART1->CR1 = USART_CR1_RXNEIE_RXFNEIE | USART_CR1_RE | USART_CR1_TE | USART_CR1_UE;    //Rx int + Tx
+    USART1->CR1 = USART_CR1_RXNEIE_RXFNEIE | USART_CR1_RE | USART_CR1_UE;    //Rx int 
 
     unsigned int temp;
-    temp = GPIOB->MODER;    //2 bits por pin
-    temp &= 0xFFFF3FFF;    //PB7 alternative
-    temp |= 0x00008000;    //
-    GPIOB->MODER = temp;
+    temp = GPIOA->AFR[1];
+    temp &= 0xFFFFF0FF;
+    temp |= 0x00000100;    //PA10 -> AF1
+    GPIOA->AFR[1] = temp;
 
-    temp = GPIOA->MODER;    //2 bits por pin
-    temp &= 0xFFCFFFFF;    //PA10 input
-    temp |= 0x00000000;    //
-    GPIOA->MODER = temp;
-
-    USART1->CR1 = USART_CR1_RXNEIE_RXFNEIE | USART_CR1_RE | USART_CR1_UE;	//no TX
-    
+    NVIC_EnableIRQ(USART1_IRQn);
+    NVIC_SetPriority(USART1_IRQn, 5);
 }
 
 
@@ -158,6 +106,18 @@ void Usart1Send (char * send)
 
     i = strlen(send);
     Usart1SendUnsigned((unsigned char *)send, i);
+}
+
+
+void Usart1Enable (void)
+{
+    USART1->CR1 |= USART_CR1_RXNEIE_RXFNEIE | USART_CR1_UE;
+}
+
+
+void Usart1Disable (void)
+{
+    USART1->CR1 &= ~(USART_CR1_RXNEIE_RXFNEIE | USART_CR1_UE);    
 }
 
 
@@ -206,26 +166,7 @@ void USART1_IRQHandler(void)
     {
         dummy = USART1->RDR & 0x0FF;
 
-        // if (usart1_mode == USART_IN_DMX_MODE)
-        //     DMX_Int_Serial_Receiver_Handler (dummy);
-        // else if (usart1_mode == USART_IN_MANUAL_MODE)
-        // {
-        //     if (prx1 < &rx1buff[SIZEOF_DATA - 1])
-        //     {
-        //         if (dummy == '\n')
-        //         {
-        //             *prx1 = '\0';
-        //             usart1_have_data = 1;
-        //         }
-        //         else
-        //         {
-        //             *prx1 = dummy;
-        //             prx1++;
-        //         }
-        //     }
-        //     else
-        //         prx1 = rx1buff;    // fixes blocked with garbage problem
-        // }
+        DMX_Int_Serial_Receiver_Handler (dummy);        
     }
 
     // USART in Tx mode --------------------------------------------------
@@ -305,12 +246,8 @@ void Usart2Config(void)
         USART2_CLK_ON;
 
     // Usart1 9600 8N1 fifo disabled oversampled 16
-#ifdef CLOCK_FREQ_16_MHZ    // PCKL 16MHz
-    USART2->BRR = USART_16MHz_9600;
-#endif
-#ifdef CLOCK_FREQ_64_MHZ    // PCKL 64MHz
     USART2->BRR = USART_64MHz_9600;
-#endif
+
     // USART1->CR2 |= USART_CR2_STOP_1;	//2 bits stop
     // USART1->CR1 = USART_CR1_RE | USART_CR1_TE | USART_CR1_UE;
     // USART1->CR1 = USART_CR1_RXNEIE | USART_CR1_RE | USART_CR1_UE;	//SIN TX
