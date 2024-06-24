@@ -18,7 +18,7 @@
 #define I2C_ADDRESS_MSK    0x7F
 
 
-// #define I2C_WITH_INTS
+#define I2C_WITH_INTS
 
 // Common Defines --------------------------------------------------------------
 #define RCC_I2C1_CLK    (RCC->APBENR1 & 0x00200000)

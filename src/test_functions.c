@@ -74,6 +74,7 @@ void TF_Oled_Screen (void);
 #endif
 
 void TF_Oled_Screen_Int (void);
+void TF_I2C1_I2C2_Oled (void);
 
 // Module Functions ------------------------------------------------------------
 void TF_Hardware_Tests (void)
@@ -96,10 +97,11 @@ void TF_Hardware_Tests (void)
     // TF_CheckCCW ();
     // TF_CheckCW ();
 
-    TF_I2C_Send_Addr ();
+    // TF_I2C_Send_Addr ();
+    // TF_I2C1_I2C2_Oled ();
     // TF_Oled_Screen ();
     
-    // TF_Oled_Screen_Int ();
+    TF_Oled_Screen_Int ();
 }
 
 
@@ -442,12 +444,14 @@ void TF_Oled_Screen_Int (void)
             timer_standby = 1000;
             if (a)
             {
-		SCREEN_Text2_Line1 ("Infinity  ");    
-		SCREEN_Text2_Line2 ("  Clinics ");
+                SCREEN_Clear();                
+		SCREEN_Text2_Line1 ("Infinity  ");
+ 		SCREEN_Text2_Line2 ("  Clinics ");
                 a = 0;
             }
             else
             {
+                SCREEN_Clear();
 		SCREEN_Text2_Line1 ("Second    ");    
 		SCREEN_Text2_Line2 ("  Screen  ");
                 a = 1;
@@ -458,6 +462,74 @@ void TF_Oled_Screen_Int (void)
     }
 }
 #endif
+
+
+void TF_I2C1_I2C2_Oled (void)
+{
+    for (int i = 0; i < 3; i++)
+    {
+        LED_ON;
+        Wait_ms(300);
+        LED_OFF;
+        Wait_ms(300);
+    }
+    
+    // OLED Init
+    I2C1_Init();
+    Wait_ms(1000);
+
+    Wait_ms(1000);
+
+    SCREEN_Init ();
+    int j = 0;
+    char lbuf[10] = { 0 };
+    while (1)
+    {
+        // estas 3 juntas ok
+        // SCREEN_Clear ();        
+        // SCREEN_Text2_Line1 ("Probe012345");
+        // SCREEN_Text2_Line2 ("0123456789");    // oka        
+
+        // estas 3 juntas err en vuelta 3 o 4 (oka con Wait_ms)
+        // SCREEN_Clear ();        
+        // SCREEN_Text2_Line1 ("Probe01234");
+        // SCREEN_Text2_Line2 ("0123456789");    // oka        
+        
+        // estas 3 juntas ok
+        // SCREEN_Clear ();        
+        // SCREEN_Text2_Line1 ("Probe0123");
+        // SCREEN_Text2_Line2 ("012345678");    // oka
+        
+        // SCREEN_Clear ();
+        if (!j)
+        {
+            SCREEN_Text2_BlankLine1();
+            SCREEN_Text2_Line1 ("Probe01234");
+        }
+
+        if (j < 1000)
+            j++;
+        else
+            j = 0;
+        
+        sprintf(lbuf, "cnt: %d", j);        
+        SCREEN_Text2_BlankLine2();
+        SCREEN_Text2_Line2 (lbuf);    // err
+                
+        for (int i = 0; i < 30; i++)
+        {
+            if (LED)
+                LED_OFF;
+            else
+                LED_ON;
+
+            Wait_ms(200);
+        }
+
+        Wait_ms(1000);
+        Wait_ms(1000);        
+    }
+}
 
 
 //--- end of file ---//
