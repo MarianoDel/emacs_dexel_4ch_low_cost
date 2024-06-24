@@ -17,11 +17,13 @@
 #ifdef OLED_128_64
 #define DISPLAYWIDTH 128
 #define DISPLAYHEIGHT 64
+#define OLED_ADDRESS    0x3C    // addr for oled 128x64
 #endif
 
 #ifdef OLED_128_32
 #define DISPLAYWIDTH 128
 #define DISPLAYHEIGHT 32
+#define OLED_ADDRESS    0x3C    // addr for oled 128x32
 #endif
 
 

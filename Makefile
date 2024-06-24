@@ -81,8 +81,12 @@ SRC += ./src/dma.c
 SRC += ./src/usart.c
 SRC += ./src/flash_program.c
 SRC += ./src/hard.c
+SRC += ./src/i2c.c
 SRC += ./src/test_functions.c
 
+SRC += ./src/screen.c
+SRC += ./src/ssd1306_display.c
+SRC += ./src/ssd1306_gfx.c
 # SRC += ./src/dmx_receiver.c
 # SRC += ./src/temperatures.c
 # SRC += ./src/dmx_mode.c

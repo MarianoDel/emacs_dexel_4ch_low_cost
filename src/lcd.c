@@ -1,1 +1,0 @@
-../../emacs_dexel_2ch_8a/src/lcd.c

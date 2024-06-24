@@ -18,7 +18,12 @@
 #include "dma.h"
 #include "tim.h"
 #include "flash_program.h"
+#include "i2c.h"
 
+#include "screen.h"
+#include "ssd1306_params.h"
+#include "ssd1306_display.h"
+#include "ssd1306_gfx.h"
 // #include "dmx_receiver.h"
 // #include "temperatures.h"
 
@@ -62,7 +67,13 @@ void TF_Dmx_Packet (void);
 void TF_Dmx_Packet_Data (void);
 void TF_Temp_Channel (void);
 
+#ifndef I2C_WITH_INTS
+void TF_I2C_Send_Data (void);
+void TF_I2C_Send_Addr (void);
+void TF_Oled_Screen (void);
+#endif
 
+void TF_Oled_Screen_Int (void);
 
 // Module Functions ------------------------------------------------------------
 void TF_Hardware_Tests (void)
@@ -74,7 +85,7 @@ void TF_Hardware_Tests (void)
     // TF_S1_S2_Fan();
 
     // TF_Usart2_Tx ();
-    TF_Usart2_Tx_Rx ();
+    // TF_Usart2_Tx_Rx ();
 
     // TF_Dmx_Break_Detect ();
     // TF_Dmx_Packet ();    
@@ -84,7 +95,11 @@ void TF_Hardware_Tests (void)
     // TF_CheckSET ();
     // TF_CheckCCW ();
     // TF_CheckCW ();
+
+    TF_I2C_Send_Addr ();
+    // TF_Oled_Screen ();
     
+    // TF_Oled_Screen_Int ();
 }
 
 
@@ -173,7 +188,7 @@ void TF_Usart2_Tx_Rx (void)
 	if (Usart2HaveData())
 	{
 	    Usart2HaveDataReset();
-	    len = Usart2ReadBuffer(buff, 100);
+	    len = Usart2ReadBuffer((unsigned char *) buff, 100);
 	    Usart2Send("\r\nnew buff: ");
 	}
 
@@ -319,6 +334,130 @@ void TF_Temp_Channel (void)
         // LCD_Writel2(s_lcd);
     }
 }
+
+
+// Test with I2C without ints
+// disable irqs on i2c.h
+#ifndef I2C_WITH_INTS
+void TF_I2C_Send_Data (void)
+{
+    I2C1_Init();
+    
+    while (1)
+    {
+        LED_ON;
+        I2C1_SendByte (I2C_ADDRESS_SLV, 0x55);
+        Wait_ms (30);
+        LED_OFF;
+        Wait_ms(970);
+    }
+    
+}
+
+
+void TF_I2C_Send_Addr (void)
+{
+    I2C1_Init();
+    
+    while (1)
+    {
+        LED_ON;
+        I2C1_SendAddr (OLED_ADDRESS);
+        // I2C1_SendAddr (0x3D);        
+        Wait_ms (30);
+        LED_OFF;
+        Wait_ms(970);
+    }
+}
+
+
+void TF_Oled_Screen (void)
+{
+    // OLED Init
+    Wait_ms(500);    //for supply stability
+    I2C1_Init();
+    Wait_ms(10);
+
+    //primer pantalla
+    LED_ON;
+    SCREEN_Init();
+    LED_OFF;
+    
+    while (1)
+    {
+        LED_ON;
+        display_contrast (255);        
+	SCREEN_Text2_Line1 ("Primera   ");    
+	SCREEN_Text2_Line2 ("  Pantalla");
+
+        LED_OFF;
+        Wait_ms(5000);
+
+        LED_ON;
+        display_contrast (10);
+	SCREEN_Text2_Line1 ("Segunda   ");    
+	SCREEN_Text2_Line2 ("  Pantalla");
+        LED_OFF;
+        Wait_ms(5000);
+
+        display_contrast (255);        
+        LED_ON;
+        display_invert(1);
+	SCREEN_Text2_Line1 ("Tercera   ");    
+	SCREEN_Text2_Line2 ("  Pantalla");
+        LED_OFF;
+        Wait_ms(5000);
+
+        LED_ON;
+        display_invert(0);
+	SCREEN_Text2_Line1 ("Cuarta    ");    
+	SCREEN_Text2_Line2 ("  Pantalla");
+        LED_OFF;
+        Wait_ms(5000);
+    }
+}
+#endif
+
+// Test with I2C with ints
+// enable irqs on i2c.h
+#ifdef I2C_WITH_INTS
+extern volatile unsigned short timer_standby;
+extern void display_update_int_state_machine (void);
+void TF_Oled_Screen_Int (void)
+{
+    // OLED Init
+    Wait_ms(500);    //for supply stability
+    I2C1_Init();
+    Wait_ms(10);
+
+    //primer pantalla
+    SCREEN_Init();
+
+    unsigned char a = 0;
+    while (1)
+    {
+        if (!timer_standby)
+        {
+            LED_ON;
+            timer_standby = 1000;
+            if (a)
+            {
+		SCREEN_Text2_Line1 ("Infinity  ");    
+		SCREEN_Text2_Line2 ("  Clinics ");
+                a = 0;
+            }
+            else
+            {
+		SCREEN_Text2_Line1 ("Second    ");    
+		SCREEN_Text2_Line2 ("  Screen  ");
+                a = 1;
+            }
+            LED_OFF;
+        }
+        display_update_int_state_machine();
+    }
+}
+#endif
 
 
 //--- end of file ---//

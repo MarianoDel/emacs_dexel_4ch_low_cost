@@ -13,7 +13,6 @@
 #include "ssd1306_display.h"
 #include "ssd1306_params.h"
 #include "i2c.h"
-#include "hard.h"
 
 
 #include <stdlib.h>
@@ -57,13 +56,13 @@
 
 // static uint32 display_write_buf( uint8_t* buf, uint16_t size );
 #if defined I2C_USE_I2C1
-#define display_write_buf(X,Y)    I2C1_SendMultiByte((X), I2C_ADDRESS_SLV, (Y))
-#define display_write_buf_int(X,Y)    I2C1_SendMultiByte_Int(I2C_ADDRESS_SLV, (X), (Y))
-#define display_wait_end()    while (!I2C1_CheckEnded_Int())
-#define display_check_end()    I2C1_CheckEnded_Int()
+#define display_write_buf(X,Y)    I2C1_SendMultiByte((X), OLED_ADDRESS, (Y))
+#define display_write_buf_int(X,Y)    I2C1_Int_SendMultiByte((X), OLED_ADDRESS, (Y))
+#define display_wait_end()    while (!I2C1_Int_CheckEnded())
+#define display_check_end()    I2C1_Int_CheckEnded()
 #elif defined I2C_USE_I2C2
-#define display_write_buf(X,Y)    I2C2_SendMultiByte((X), I2C_ADDRESS_SLV, (Y))
-#define display_write_buf_int(X,Y)    I2C2_Int_SendMultiByte((X), I2C_ADDRESS_SLV, (Y))
+#define display_write_buf(X,Y)    I2C2_SendMultiByte((X), OLED_ADDRESS, (Y))
+#define display_write_buf_int(X,Y)    I2C2_Int_SendMultiByte((X), OLED_ADDRESS, (Y))
 #define display_wait_end()    while (!I2C2_Int_CheckEnded())
 #define display_check_end()    I2C2_Int_CheckEnded()
 #else
@@ -93,10 +92,6 @@ static unsigned char cmdbuf[129] = { 0 };
 // call before first use of other functions
 void display_init( uint8_t i2caddr )
 {
-
-    //TODO: quitar esto de aca por favor!!!!
-    // gfx_init( DISPLAYWIDTH, DISPLAYHEIGHT );
-
 #ifdef OLED_128_64
 #ifdef I2C_WITH_INTS    
     cmdbuf[0] = 0x00;
@@ -383,15 +378,6 @@ void display_update_int_state_machine (void)
     case DISPLAY_UPDATE_INIT:
         d_update_page = 0;
         d_update_st++;
-#ifdef USE_CTRL_FAN_FOR_DISPLAY_SM_UPDATE_ON_INIT
-        if (CTRL_FAN)
-            CTRL_FAN_OFF;
-        else
-            CTRL_FAN_ON;
-#endif
-#ifdef USE_CTRL_FAN_FOR_DISPLAY_SM_UPDATE_ON_START_END
-        CTRL_FAN_ON;
-#endif
         break;
 
     case DISPLAY_UPDATE_SET_PAGE_CMD_0:
@@ -513,20 +499,19 @@ void display_update (void)
         //seteo el 0 de cada pagina
         cmd[0] = 0x00;
         cmd[1] = 0x02;    //page addr 0
-        display_write_buf( cmd, sizeof(cmd) ); 
+        display_write_buf( cmd, sizeof(cmd) );
         
         cmd[0] = 0x00;
         cmd[1] = 0x10;    //page addr 0
-        display_write_buf( cmd, sizeof(cmd) ); 
+        display_write_buf( cmd, sizeof(cmd) );
 
         //seteo la pagina
         cmd[1] = 0xB0 | page;
-
-        display_write_buf( cmd, sizeof(cmd) ); 
+        display_write_buf( cmd, sizeof(cmd) );
 
         datab[0] = 0x40;
         memcpy(datab + 1, SSD1306_buffer + 1 + page * 128, 128);
-        display_write_buf( datab, sizeof(datab) ); 
+        display_write_buf( datab, sizeof(datab) );
     }
 #endif
 #endif

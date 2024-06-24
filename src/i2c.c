@@ -59,19 +59,39 @@ void I2C1_Init (void)
 
     // Speed and Port options
     I2C1->TIMINGR = 0x00201D2B;    //for HSI
+    // I2C2->TIMINGR = 0x00300F38;    //for 64MHz clock 32MHz in PCLK -> 400KHz fastmode
     I2C1->CR1 = I2C_CR1_PE;
     I2C1->CR2 = I2C_CR2_AUTOEND |
         (2 << I2C_CR2_NBYTES_Pos) |
         (I2C_ADDRESS_SLV << 1);    //el addr + 1 byte
 
     // Override Gpios Alternative functions
-    // PB8 SCL/D15; PB9 SDA/D14 -> AF4
-    unsigned int temp = 0;
-    temp = GPIOB->AFR[1];
-    temp &= 0xFFFFFF00;
-    temp |= 0x00000044;    //PB9 -> AF4 PA8 -> AF4
-    GPIOB->AFR[1] = temp;
+    // // PA9 SCL; PA10 SDA -> AF6
+    // unsigned int temp = 0;
+    // temp = GPIOA->AFR[1];
+    // temp &= 0xFFFFF00F;
+    // temp |= 0x00000660;    //PA10 -> AF6 PA9 -> AF6
+    // GPIOA->AFR[1] = temp;
 
+    // // PB8 SCL/D15; PB9 SDA/D14 -> AF4
+    // unsigned int temp = 0;
+    // temp = GPIOB->AFR[1];
+    // temp &= 0xFFFFFF00;
+    // temp |= 0x00000044;    //PB9 -> AF4 PA8 -> AF4
+    // GPIOB->AFR[1] = temp;
+
+    // PB7 SDA; PB8 SCL -> AF6
+    unsigned int temp = 0;
+    temp = GPIOB->AFR[0];
+    temp &= 0x0FFFFFFF;
+    temp |= 0x60000000;    //PB7 -> AF6
+    GPIOB->AFR[0] = temp;
+
+    temp = GPIOB->AFR[1];
+    temp &= 0xFFFFFFF0;
+    temp |= 0x00000006;    //PB8 -> AF6
+    GPIOB->AFR[1] = temp;
+    
 #ifdef I2C_WITH_INTS
     // Int and priority
     NVIC_EnableIRQ(I2C1_IRQn);
@@ -247,6 +267,69 @@ void I2C1_SendLastChunk (unsigned char *pdata, unsigned char size)
     // i2 += 1;
 }
 
+
+volatile unsigned char i2c1_bytes_left = 0;
+volatile unsigned char i2c1_stopped = 0;
+volatile unsigned char * p_i2c1_data = 0;
+
+// Send multiple bytes to a slave address
+void I2C1_Int_SendMultiByte (unsigned char *pdata, unsigned char addr, unsigned short size)
+{
+    //check START ready
+    if (!(I2C1->CR2 & I2C_CR2_START))
+    {
+        I2C1_ChangeNBytes(size);
+        I2C1_AUTOEND;
+        I2C1_ChangeSlaveAddr(addr);
+
+        i2c1_bytes_left = size;
+        p_i2c1_data = pdata;
+        
+        I2C1->CR2 |= I2C_CR2_START;
+        I2C1->CR1 |= I2C_CR1_TXIE;
+
+        //clear the STOP flag
+        I2C1->ICR |= I2C_ICR_STOPCF;
+        i2c1_stopped = 0;
+
+        I2C1->CR1 |= I2C_CR1_STOPIE;
+    }
+}
+
+
+unsigned char I2C1_Int_CheckEnded (void)
+{
+    return i2c1_stopped;
+}
+
+
+void I2C1_IRQHandler (void)
+{
+    //send next byte
+    if (I2C1->ISR & I2C_ISR_TXIS)
+    {
+        if (i2c1_bytes_left)
+        {
+            i2c1_bytes_left--;
+            I2C1->TXDR = *p_i2c1_data;
+            p_i2c1_data++;
+        }
+        else
+        {
+            //all bytes sended stop int
+            I2C1->CR1 &= ~(I2C_CR1_TXIE);
+        }
+    }
+
+    if (I2C1->ISR & I2C_ISR_STOPF)
+    {
+        I2C1->ICR |= I2C_ICR_STOPCF;
+        I2C1->CR1 &= ~(I2C_CR1_STOPIE);
+        i2c1_stopped = 1;
+    }
+}
+
+
 ////////////////////
 // I2C2 FUNCTIONS //
 ////////////////////
@@ -279,6 +362,13 @@ void I2C2_Init (void)
     temp |= 0x00066000;    //PA12 -> AF6 PA11 -> AF6
     GPIOA->AFR[1] = temp;
 
+    // // PB8 SCL/D15; PB9 SDA/D14 -> AF4
+    // unsigned int temp = 0;
+    // temp = GPIOB->AFR[1];
+    // temp &= 0xFFFFFF00;
+    // temp |= 0x00000044;    //PB9 -> AF4 PA8 -> AF4
+    // GPIOB->AFR[1] = temp;
+    
 
 #ifdef I2C_WITH_INTS    
     // Int and priority

@@ -10,12 +10,11 @@
 #define _I2C_H_
 
 // Config Defines --------------------------------------------------------------
-// #define I2C_USE_I2C1
-#define I2C_USE_I2C2
+#define I2C_USE_I2C1
+// #define I2C_USE_I2C2
 
 #define I2C_ADDRESS_OWN    0x01
-#define I2C_ADDRESS_SLV    0x3C    //para 32?
-// #define I2C_ADDRESS_SLV    0x3D    //para 64?
+#define I2C_ADDRESS_SLV    0x3C
 #define I2C_ADDRESS_MSK    0x7F
 
 
@@ -37,6 +36,11 @@ void I2C1_SendByteTest (unsigned char);
 void I2C1_SendByte (unsigned char, unsigned char);
 void I2C1_SendAddr (unsigned char);
 void I2C1_SendMultiByte (unsigned char *, unsigned char, unsigned short);
+
+#ifdef I2C_WITH_INTS
+void I2C1_Int_SendMultiByte (unsigned char *pdata, unsigned char addr, unsigned short size);
+unsigned char I2C1_Int_CheckEnded (void);
+#endif
 #endif
 
 #ifdef I2C_USE_I2C2
@@ -48,8 +52,8 @@ void I2C2_SendMultiByte (unsigned char *, unsigned char, unsigned short);
 void I2C2_IRQHandler (void);
 
 #ifdef I2C_WITH_INTS
+void I2C2_Int_SendMultiByte (unsigned char *pdata, unsigned char addr, unsigned short size);
 unsigned char I2C2_Int_CheckEnded (void);
-void I2C2_Int_SendMultiByte (unsigned char *, unsigned char, unsigned short);
 #endif
 #endif
 
