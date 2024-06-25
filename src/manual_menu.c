@@ -43,6 +43,8 @@ typedef enum {
 
 // Globals ---------------------------------------------------------------------
 volatile unsigned short manual_menu_timer = 0;
+unsigned char manual_menu_showing = 0;
+unsigned char manual_menu_out_cnt = 0;
 manual_menu_state_e manual_state = MANUAL_MENU_INIT;
 
 
@@ -118,6 +120,8 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
         {
             Options_Up_Dwn_Select_Reset();
             // manual_need_display_update = 1;
+            manual_menu_out_cnt = 20;
+            manual_menu_showing = 1;
             manual_state++;
         }
         break;
@@ -125,9 +129,14 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
     case MANUAL_MENU_CHANGE_RED:
 
         SCREEN_Text2_BlankLine1();
-        sprintf(s_temp, "Red:   %3d",
-                *((mem->fixed_channels) + 0));
-        SCREEN_Text2_Line1(s_temp);
+        if (manual_menu_showing)
+        {
+            sprintf(s_temp, "Red:   %3d",
+                    *((mem->fixed_channels) + 0));
+            SCREEN_Text2_Line1(s_temp);            
+        }
+        else
+            SCREEN_Text2_Line1("Red:");
 
         manual_need_display_update = 1;
         manual_state++;
@@ -138,7 +147,12 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
         resp = Options_Up_Dwn_Next (actions);
 
         if (resp != resp_continue)
+        {
             manual_need_display_update = 1;
+            manual_menu_out_cnt = 20;
+            manual_menu_timer = 500;
+            manual_menu_showing = 1;
+        }
         
         if (resp == resp_up)
         {
@@ -160,6 +174,23 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
 
             manual_state--;            
             resp = resp_change;
+        }
+
+        if (!manual_menu_timer)
+        {
+            manual_menu_timer = 500;
+            if (manual_menu_showing)
+                manual_menu_showing = 0;
+            else
+                manual_menu_showing = 1;
+
+            manual_state--;
+            manual_menu_out_cnt--;
+
+            if (!manual_menu_out_cnt)
+            {
+                manual_state = MANUAL_MENU_SHOW_FIRST;                
+            }
         }
 
         if (resp == resp_ok)
