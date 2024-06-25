@@ -371,13 +371,13 @@ void I2C1_SendMultiByte (unsigned char *pdata, unsigned char addr, unsigned shor
 }
 
 
-void I2C1_SendMultiByte_Int (unsigned char addr, unsigned char *pdata, unsigned short size)
+void I2C1_Int_SendMultiByte (unsigned char *pdata, unsigned char addr, unsigned short size)
 {
     I2C1_SendMultiByte (pdata, addr, size);
 }
 
 
-unsigned char I2C1_CheckEnded_Int (void)
+unsigned char I2C1_Int_CheckEnded (void)
 {
     return 1;
 }
@@ -433,13 +433,13 @@ void I2C2_SendMultiByte (unsigned char *pdata, unsigned char addr, unsigned shor
 }
 
 
-void I2C2_Int_SendMultiByte (unsigned char addr, unsigned char *pdata, unsigned short size)
+void I2C2_Int_SendMultiByte (unsigned char *pdata, unsigned char addr, unsigned short size)
 {
     I2C2_SendMultiByte (pdata, addr, size);
 }
 
 
-unsigned char I2C1_Int_CheckEnded (void)
+unsigned char I2C2_Int_CheckEnded (void)
 {
     return 1;
 }

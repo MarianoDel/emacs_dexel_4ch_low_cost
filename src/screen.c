@@ -12,8 +12,6 @@
 #include "ssd1306_gfx.h"
 #include "ssd1306_params.h"
 
-#include "i2c.h"    //TODO: MEJORAR ESTO PARA ADDR SLV
-
 
 // Externals -------------------------------------------------------------------
 
@@ -27,7 +25,7 @@
 // Module Funtions -------------------------------------------------------------
 void SCREEN_Init (void)
 {
-    display_init(I2C_ADDRESS_SLV);
+    display_init(OLED_ADDRESS);
     gfx_init( DISPLAYWIDTH, DISPLAYHEIGHT );
 }
 

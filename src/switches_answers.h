@@ -39,7 +39,9 @@ typedef enum {
     resp_timeout,
     resp_ready,
     resp_no_answer,
-    resp_save
+    resp_save,
+    resp_up,
+    resp_dwn
 
 } resp_t;
 

@@ -9,6 +9,10 @@
 
 // Includes --------------------------------------------------------------------
 #include "menu_options_oled.h"
+#include "screen.h"
+#include "ssd1306_display.h"
+#include "ssd1306_gfx.h"
+
 
 
 // Module Private Types & Macros -----------------------------------------------
