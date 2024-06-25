@@ -8,14 +8,12 @@
 #include "tests_oled_application.h"
 
 // Application Includes needed for this test
-#include "menu_options_oled.h"
+#include "manual_menu.h"
 #include "screen.h"
 #include "switches_answers.h"
 #include "parameters.h"
 
 
-// #define TEST_MENU_SELECT
-#define TEST_MENU_NEXT
 // Module Types Constants and Macros -------------------------------------------
 
 
@@ -31,10 +29,9 @@ static GMutex mutex;
 int setup_done = 0;
 unsigned int timer_standby = 0;
 
-
+parameters_typedef mem;
 
 // Testing Function loop -------------------------------------------------------
-#ifdef TEST_MENU_SELECT
 gboolean Test_Main_Loop (gpointer user_data)
 {
     resp_t resp = resp_continue;
@@ -48,7 +45,12 @@ gboolean Test_Main_Loop (gpointer user_data)
         SCREEN_Clear ();        
         SCREEN_Text2_Line1 ("Dexel     ");    
         SCREEN_Text2_Line2 ("  Lighting");
-        
+
+        Manual_Menu_Reset ();
+        mem.fixed_channels[0] = 255;
+        mem.fixed_channels[1] = 255;
+        mem.fixed_channels[2] = 0;
+        mem.fixed_channels[3] = 0;        
         timer_standby = 1300;
     }
 
@@ -62,7 +64,7 @@ gboolean Test_Main_Loop (gpointer user_data)
 
     if (setup_done == 2)
     {
-        resp = Options_Up_Dwn_Select (switch_actions);
+        resp = Manual_Menu (&mem, switch_actions);
 
         if (resp == resp_up)
         {
@@ -99,81 +101,13 @@ gboolean Test_Main_Loop (gpointer user_data)
         
     return TRUE;
 }
-#endif
-
-
-#ifdef TEST_MENU_NEXT
-gboolean Test_Main_Loop (gpointer user_data)
-{
-    resp_t resp = resp_continue;
-
-    if (setup_done == 0)
-    {
-        setup_done = 1;
-
-        SCREEN_Init();
-
-        SCREEN_Clear ();        
-        SCREEN_Text2_Line1 ("Dexel     ");    
-        SCREEN_Text2_Line2 ("  Lighting");
-        
-        timer_standby = 1300;
-    }
-
-    if (setup_done == 1)
-    {
-        if (timer_standby)
-            display_update_int_state_machine ();
-        else
-            setup_done = 2;
-    }
-
-    if (setup_done == 2)
-    {
-        resp = Options_Up_Dwn_Next (switch_actions);
-
-        if (resp == resp_up)
-        {
-            printf("resp_up\n");
-        }
-
-        if (resp == resp_dwn)
-        {
-            printf("resp_dwn\n");
-        }
-
-        if (resp == resp_change)
-        {
-            printf("resp_change\n");
-        }
-
-        if (resp == resp_ok)
-        {
-            printf("resp_ok ended!\n");
-        }
-        
-        display_update_int_state_machine ();    
-
-    }
-
-    //wraper to clean sw
-    g_mutex_lock (&mutex);
-
-    if (switch_actions != selection_none)
-        switch_actions = selection_none;
-    
-    g_mutex_unlock (&mutex);
-    // usleep(500);
-        
-    return TRUE;
-}
-#endif
 
 gboolean Test_Timeouts_Loop_1ms (gpointer user_data)
 {
     if (timer_standby)
         timer_standby--;
 
+    Manual_Menu_Timeouts();
     return TRUE;
 }
 

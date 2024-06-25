@@ -42,10 +42,10 @@ typedef struct parameters {
     unsigned short dmx_first_channel;    // 2 bytes if its aligned to 4
 
     //-- For Manual mode settings ----   //6
-    unsigned char fixed_channels [2];
+    unsigned char fixed_channels [4];
 
     //-- For Max Current Channels settings ----   //8
-    unsigned char max_current_channels [2];    
+    unsigned char max_current_channels [4];    
     
     //-- Current Set ----    //10
     unsigned char current_eight_amps;
