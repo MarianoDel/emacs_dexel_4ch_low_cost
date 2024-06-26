@@ -4,12 +4,12 @@
 // ## @Editor: Emacs - ggtags
 // ## @TAGS:   Global
 // ##
-// #### MANUAL_MENU.H ##############################
+// #### DMX_MENU.H ##############################
 //-------------------------------------------------
 
 // Prevent recursive inclusion -------------------------------------------------
-#ifndef _MANUAL_MENU_H_
-#define _MANUAL_MENU_H_
+#ifndef _DMX_MENU_H_
+#define _DMX_MENU_H_
 
 //-- includes to help configurations --//
 #include "switches_answers.h"
@@ -17,20 +17,14 @@
 
 
 // Module Exported Types Constants and Macros ----------------------------------
-#define MANUAL_RED    0x01
-#define MANUAL_GREEN    0x02
-#define MANUAL_BLUE    0x04
-#define MANUAL_WARM    0x08
-#define MANUAL_COLD    0x10
-
 
 
 // Module Exported Functions ---------------------------------------------------
-void Manual_Menu_Timeouts (void);
-void Manual_Menu_Reset (void);
-resp_t Manual_Menu (parameters_typedef *, sw_actions_t);
+void Dmx_Menu_Timeout (void);
+void Dmx_Menu_Reset (void);
+resp_t Dmx_Menu (parameters_typedef *, sw_actions_t);
 
-#endif    /* _MANUAL_MENU_H_ */
+#endif    /* _DMX_MENU_H_ */
 
 //--- end of file ---//
 

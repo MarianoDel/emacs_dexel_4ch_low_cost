@@ -33,12 +33,7 @@ typedef enum {
 } manual_menu_state_e;
 
 
-#define TT_SHOW    500
-#define TT_NOT_SHOW    500
-
-
 // Externals -------------------------------------------------------------------
-
 
 
 // Globals ---------------------------------------------------------------------
@@ -49,9 +44,6 @@ manual_menu_state_e manual_state = MANUAL_MENU_INIT;
 
 
 // Module Private Functions ----------------------------------------------------
-void Manual_Selected_To_Line_Init (unsigned char, unsigned char *, unsigned char *, unsigned char *);
-void ManualMenu_Options(unsigned char, unsigned char, char *);
-resp_t ManualMenu_CheckColors (parameters_typedef * mem);
 
 
 // Module Funtions -------------------------------------------------------------
@@ -119,9 +111,7 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
             (actions == selection_enter))
         {
             Options_Up_Dwn_Select_Reset();
-            // manual_need_display_update = 1;
             manual_menu_out_cnt = 20;
-            manual_menu_showing = 1;
             manual_state++;
         }
         break;
@@ -203,9 +193,14 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
     case MANUAL_MENU_CHANGE_GREEN:
 
         SCREEN_Text2_BlankLine1();
-        sprintf(s_temp, "Green: %3d",
-                *((mem->fixed_channels) + 1));
-        SCREEN_Text2_Line1(s_temp);
+        if (manual_menu_showing)
+        {
+            sprintf(s_temp, "Green: %3d",
+                    *((mem->fixed_channels) + 1));
+            SCREEN_Text2_Line1(s_temp);
+        }
+        else
+            SCREEN_Text2_Line1("Green:");
 
         manual_need_display_update = 1;
         manual_state++;
@@ -216,8 +211,13 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
         resp = Options_Up_Dwn_Next (actions);
 
         if (resp != resp_continue)
+        {
             manual_need_display_update = 1;
-        
+            manual_menu_out_cnt = 20;
+            manual_menu_timer = 500;
+            manual_menu_showing = 1;
+        }
+
         if (resp == resp_up)
         {
             unsigned char * pch = ((mem->fixed_channels) + 1);
@@ -238,6 +238,23 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
             
             manual_state--;
             resp = resp_change;
+        }
+
+        if (!manual_menu_timer)
+        {
+            manual_menu_timer = 500;
+            if (manual_menu_showing)
+                manual_menu_showing = 0;
+            else
+                manual_menu_showing = 1;
+
+            manual_state--;
+            manual_menu_out_cnt--;
+
+            if (!manual_menu_out_cnt)
+            {
+                manual_state = MANUAL_MENU_SHOW_FIRST;                
+            }
         }
 
         if (resp == resp_ok)
@@ -250,9 +267,14 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
     case MANUAL_MENU_CHANGE_BLUE:
 
         SCREEN_Text2_BlankLine1();
-        sprintf(s_temp, "Blue:  %3d",
-                *((mem->fixed_channels) + 2));
-        SCREEN_Text2_Line1(s_temp);
+        if (manual_menu_showing)
+        {
+            sprintf(s_temp, "Blue:  %3d",
+                    *((mem->fixed_channels) + 2));
+            SCREEN_Text2_Line1(s_temp);
+        }
+        else
+            SCREEN_Text2_Line1("Blue:");
 
         manual_need_display_update = 1;
         manual_state++;
@@ -263,7 +285,12 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
         resp = Options_Up_Dwn_Next (actions);
 
         if (resp != resp_continue)
+        {
             manual_need_display_update = 1;
+            manual_menu_out_cnt = 20;
+            manual_menu_timer = 500;
+            manual_menu_showing = 1;
+        }
         
         if (resp == resp_up)
         {
@@ -285,6 +312,23 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
             
             manual_state--;
             resp = resp_change;
+        }
+
+        if (!manual_menu_timer)
+        {
+            manual_menu_timer = 500;
+            if (manual_menu_showing)
+                manual_menu_showing = 0;
+            else
+                manual_menu_showing = 1;
+
+            manual_state--;
+            manual_menu_out_cnt--;
+
+            if (!manual_menu_out_cnt)
+            {
+                manual_state = MANUAL_MENU_SHOW_FIRST;                
+            }
         }
 
         if (resp == resp_ok)
@@ -297,9 +341,14 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
     case MANUAL_MENU_CHANGE_WHITE:
 
         SCREEN_Text2_BlankLine1();
-        sprintf(s_temp, "White: %3d",
-                *((mem->fixed_channels) + 3));
-        SCREEN_Text2_Line1(s_temp);
+        if (manual_menu_showing)
+        {
+            sprintf(s_temp, "White: %3d",
+                    *((mem->fixed_channels) + 3));
+            SCREEN_Text2_Line1(s_temp);
+        }
+        else
+            SCREEN_Text2_Line1("White:");
 
         manual_need_display_update = 1;
         manual_state++;
@@ -310,7 +359,12 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
         resp = Options_Up_Dwn_Next (actions);
 
         if (resp != resp_continue)
+        {
             manual_need_display_update = 1;
+            manual_menu_out_cnt = 20;
+            manual_menu_timer = 500;
+            manual_menu_showing = 1;
+        }
         
         if (resp == resp_up)
         {
@@ -332,6 +386,23 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
             
             manual_state--;
             resp = resp_change;
+        }
+
+        if (!manual_menu_timer)
+        {
+            manual_menu_timer = 500;
+            if (manual_menu_showing)
+                manual_menu_showing = 0;
+            else
+                manual_menu_showing = 1;
+
+            manual_state--;
+            manual_menu_out_cnt--;
+
+            if (!manual_menu_out_cnt)
+            {
+                manual_state = MANUAL_MENU_SHOW_FIRST;                
+            }
         }
 
         if (resp == resp_ok)
@@ -347,54 +418,6 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
     return resp;
     
 }
-
-
-
-
-// unsigned char manual_colors_from_comms = 0;
-// void ManualMenu_SetColors (unsigned char color)
-// {
-//     manual_colors_from_comms |= color;
-// }
-
-
-// resp_t ManualMenu_CheckColors (parameters_typedef * mem)
-// {
-//     resp_t resp = resp_continue;
-    
-//     if (manual_colors_from_comms)
-//     {
-//         //check if channel is active
-//         unsigned char ch = manual_colors_from_comms;
-
-//         for (unsigned char i = 0; i < 6; i++)
-//         {
-//             if (ch & 0x01)
-//             {
-//                 if (i < mem->dmx_channel_quantity)
-//                 {
-//                     //change the colors and update interface
-//                     mem->manual_channels[0] = 0;
-//                     mem->manual_channels[1] = 0;
-//                     mem->manual_channels[2] = 0;
-//                     mem->manual_channels[3] = 0;
-//                     mem->manual_channels[4] = 0;
-//                     mem->manual_channels[5] = 0;
-                    
-//                     mem->manual_channels[i] = 255;
-//                     i = 6;
-//                     resp = resp_change;
-//                 }
-//             }
-//             else
-//                 ch >>= 1;
-
-//         }
-//         manual_colors_from_comms = 0;
-//     }
-
-//     return resp;
-// }
 
 
 //--- end of file ---//
