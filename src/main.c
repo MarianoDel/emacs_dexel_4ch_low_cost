@@ -18,21 +18,27 @@
 // #include "comm.h"
 #include "parameters.h"
 
+#include "flash_program.h"
 #include "core_cm0plus.h"
+
 #include "adc.h"
 #include "dma.h"
-#include "flash_program.h"
+#include "dsp.h"
 
 #include "test_functions.h"
 #include "dmx_receiver.h"
-// #include "temperatures.h"
+#include "temperatures.h"
+
+#include "i2c.h"
+#include "screen.h"
+#include "ssd1306_display.h"
 
 // #include "dmx_mode.h"
 // #include "manual_mode.h"
 // #include "menues.h"
-#include "comms_power.h"
+// #include "comms_power.h"
 
-#include "dsp.h"
+
 
 #include <stdio.h>
 #include <string.h>
@@ -120,41 +126,104 @@ int main(void)
         SysTickError();
 #endif
 
-    //--- Funciones de Test Hardware ---
-    TF_Hardware_Tests ();    
-    //--- Fin Funciones de Test Hardware ---    
+    //--- Test Hardware Functions ---
+    // TF_Hardware_Tests ();    
+    //--- end of Test Hardware Functions ---    
 
+    //--- Hardware Inits ---
+    // OLED and Screen module Init
+    I2C1_Init();
+    Wait_ms(10);
+    SCREEN_Init();
+    Wait_ms(10);
+
+    // Init DMX
+    Usart1Config();
+    TIM_14_Init();
+    DMX_channel_selected = 1;
+    DMX_channel_quantity = 4;
+    DMX_EnableRx();
+
+    // ADC & DMA for temp sense Init
+    AdcConfig();
+    DMAConfig();
+    DMA1_Channel1->CCR |= DMA_CCR_EN;
+    ADC1->CR |= ADC_CR_ADSTART;
+
+    // Start filters
+    FiltersAndOffsets_Filters_Reset ();
     
-//     //--- Welcome code ---//
-//     // Usart and Timer for DMX
-//     Usart1Config ();
-//     TIM_14_Init ();
-//     DMX_DisableRx ();
+    
+    // --- Welcome Code ------------
+    SCREEN_Clear ();
+    SCREEN_Text2_Line1 ("Kirno Tech");    
+    SCREEN_Text2_Line2 ("Smart Drvr");
+    timer_standby = 800;
+    while (timer_standby)
+        display_update_int_state_machine();
+
+    SCREEN_Clear ();
+    SCREEN_Text2_Line1 ("Dexel     ");    
+    SCREEN_Text2_Line2 ("  Lighting");
+    timer_standby = 1300;
+    while (timer_standby)
+        display_update_int_state_machine();
+    
+
+    // --- Get saved config or create one for default ---
+    if (pflash_mem->program_type != 0xff)
+    {
+        //memory with valid data
+        memcpy(&mem_conf, pflash_mem, sizeof(parameters_typedef));
+    }
+    else
+    {
+        // Default mem config
+        // mem_conf.program_type = DMX1_MODE;
+        // mem_conf.master_send_dmx_enable = 0;
+        // mem_conf.program_inner_type = MANUAL_NO_INNER_MODE;
+        // mem_conf.program_inner_type_speed = 0;
+
+        // mem_conf.max_power = 1530;
+        mem_conf.dmx_first_channel = 1;
+        mem_conf.dmx_channel_quantity = 4;
+        mem_conf.max_current_channels[0] = 255;
+        mem_conf.max_current_channels[1] = 255;
+        mem_conf.max_current_channels[2] = 255;
+        mem_conf.max_current_channels[3] = 255;
+        // mem_conf.max_current_channels[4] = 255;
+        // mem_conf.max_current_channels[5] = 255;
+        
+        mem_conf.temp_prot = TEMP_IN_70;    //70 degrees
+    }
+
+    //-- check NTC connection on init --
+    unsigned short temp_filtered = 0;
+    MA16_U16Circular_Reset(&temp_filter);
+    for (int i = 0; i < 16; i++)
+    {
+        temp_filtered = MA16_U16Circular(&temp_filter, Temp_Channel);
+        Wait_ms(30);
+    }
+
+    if (temp_filtered < NTC_SHORTED)
+    {
+        CTRL_FAN_ON;
+        Manager_Ntc_Reset();
+    }
+    else
+        Manager_Ntc_Set();
+    // -- end of check NTC connection on init --
+    
+    // main program
+    while (1)
+    {
+        Manager(&mem_conf);
+    }
 
 //     // Usart for comms with power
 //     Usart2Config ();
-    
-//     // ADC & DMA for temp sense
-//     AdcConfig();
-//     DMAConfig();
-//     DMA1_Channel1->CCR |= DMA_CCR_EN;
-//     ADC1->CR |= ADC_CR_ADSTART;
-    
-//     // LCD Init and Welcome Code
-//     LCD_UtilsInit();
-//     CTRL_BKL_ON;
-
-//     while (LCD_ShowBlink("Kirno Technology",
-//                          "  Smart Driver  ",
-//                          1,
-//                          BLINK_NO) != resp_finish);
-
-//     while (LCD_ShowBlink(" Dexel          ",
-//                          "  Lighting      ",
-//                          2,
-//                          BLINK_NO) != resp_finish);
-
-    
+        
 //     // Production Program ---------------------------
 //     sw_actions_t action = selection_none;
 //     resp_t resp = resp_continue;
@@ -673,8 +742,6 @@ void TimingDelay_Decrement(void)
     if (need_to_save_timer)
         need_to_save_timer--;
 
-    // LCD_UpdateTimer ();
-
     HARD_Timeouts();
 
     DMX_Int_Millis_Handler ();
@@ -684,7 +751,7 @@ void TimingDelay_Decrement(void)
         ptFTT();
 
     // USART_Timeouts();
-    Comms_Power_Timeouts ();
+    // Comms_Power_Timeouts ();
 
 // #if (defined USE_TEMP_PROT) || (defined USE_NTC_DETECTION)
 //     if (timer_temp)
