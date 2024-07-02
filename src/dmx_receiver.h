@@ -11,7 +11,7 @@
 #define _DMX_RECEIVER_H_
 
 
-#define SIZEOF_DMX_BUFFER_DATA    5    //max hardware channels + 1
+#define SIZEOF_DMX_BUFFER_DATA    6    //max hardware channels + 1 dmx/rdm packet + 1 grandmaster
 
 
 

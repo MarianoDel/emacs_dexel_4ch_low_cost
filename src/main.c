@@ -86,7 +86,7 @@ volatile unsigned short mode_effect_timer;
 // Globals ---------------------------------------------------------------------
 // - Globals from timers -------
 volatile unsigned short timer_standby = 0;
-volatile unsigned short need_to_save_timer = 0;
+// volatile unsigned short need_to_save_timer = 0;
 
 #ifdef USE_TEMP_PROT
 unsigned short timer_temp = 0;
@@ -97,7 +97,7 @@ ma16_u16_data_obj_t temp_filter;
 void (* ptFTT ) (void) = NULL;
 
 // -- for the memory -------------------
-unsigned char need_to_save = 0;
+// unsigned char need_to_save = 0;
 
 
 // Module Private Functions ----------------------------------------------------
@@ -132,6 +132,7 @@ int main(void)
 
     //--- Hardware Inits ---
     // OLED and Screen module Init
+    Wait_ms(1000);
     I2C1_Init();
     Wait_ms(10);
     SCREEN_Init();
@@ -153,6 +154,9 @@ int main(void)
     // Start filters
     FiltersAndOffsets_Filters_Reset ();
     
+    // Start Tim for PWm
+    TIM_3_Init ();
+
     
     // --- Welcome Code ------------
     SCREEN_Clear ();
@@ -229,7 +233,7 @@ int main(void)
 //     resp_t resp = resp_continue;
 //     unsigned char ch_values [2] = { 0 };
 //     main_state_e main_state = MAIN_INIT;
-//     unsigned char packet_cnt = 0;
+
 
 //     // check NTC connection on init
 //     unsigned char check_ntc = 0;
@@ -707,21 +711,21 @@ int main(void)
 
 
 // Module Private Functions ----------------------------------------------------
-unsigned char CheckTempGreater (unsigned short temp_sample, unsigned short temp_prot)
-{
-    unsigned char is_greater = 0;
+// unsigned char CheckTempGreater (unsigned short temp_sample, unsigned short temp_prot)
+// {
+//     unsigned char is_greater = 0;
 
-#ifdef TEMP_SENSOR_LM335
-    if (temp_sample > temp_prot)
-        is_greater = 1;
-#endif
-#ifdef TEMP_SENSOR_NTC1K
-    if (temp_sample < temp_prot)    // see it in voltage
-        is_greater = 1;
-#endif
+// #ifdef TEMP_SENSOR_LM335
+//     if (temp_sample > temp_prot)
+//         is_greater = 1;
+// #endif
+// #ifdef TEMP_SENSOR_NTC1K
+//     if (temp_sample < temp_prot)    // see it in voltage
+//         is_greater = 1;
+// #endif
     
-    return is_greater;
-}
+//     return is_greater;
+// }
 
 
 void EXTI4_15_IRQHandler(void)
@@ -732,6 +736,7 @@ void EXTI4_15_IRQHandler(void)
 }
 
 
+extern unsigned char dmx_local_data [];
 void TimingDelay_Decrement(void)
 {
     TIM_Timeouts ();
@@ -739,8 +744,8 @@ void TimingDelay_Decrement(void)
     if (timer_standby)
         timer_standby--;
 
-    if (need_to_save_timer)
-        need_to_save_timer--;
+    // if (need_to_save_timer)
+    //     need_to_save_timer--;
 
     HARD_Timeouts();
 
@@ -750,6 +755,7 @@ void TimingDelay_Decrement(void)
     if (ptFTT != NULL)
         ptFTT();
 
+    FiltersAndOffsets_Calc_SM (dmx_local_data);
     // USART_Timeouts();
     // Comms_Power_Timeouts ();
 

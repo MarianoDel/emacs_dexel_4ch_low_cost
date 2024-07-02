@@ -92,11 +92,12 @@ SRC += ./src/dmx_receiver.c
 SRC += ./src/manager.c
 
 # SRC += ./src/temperatures.c
-# SRC += ./src/dmx_mode.c
-# SRC += ./src/menues.c
-# SRC += ./src/manual_mode.c
-# SRC += ./src/dmx_lcd_menu.c
-# SRC += ./src/dmx_utils.c
+SRC += ./src/menu_options_oled.c
+SRC += ./src/dmx_menu.c
+SRC += ./src/main_menu.c
+SRC += ./src/manual_menu.c
+SRC += ./src/filters_and_offsets.c
+SRC += ./src/pwm.c
 SRC += ./src/comms_power.c
 
 SRC += ./src/dsp.c

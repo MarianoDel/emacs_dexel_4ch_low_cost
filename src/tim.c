@@ -105,40 +105,41 @@ void TIM_3_Init (void)
     TIM3->CR1 = 0x00;		//clk int / 1; upcounting
     TIM3->CR2 |= TIM_CR2_MMS_1;		//UEV -> TRG0
 
-//	TIM3->CCMR2 = 0x7070;			//CH4 y CH3 output PWM mode 2
-    TIM3->CCMR1 = 0x0060;			//CH1 PWM mode 2
-    TIM3->CCMR2 = 0x0000;			//
-    TIM3->CCER |= TIM_CCER_CC1E;	//CH1 enable on pin
+    TIM3->CCMR1 = 0x6060;    // CH2 CH1 pwm mode 2
+    TIM3->CCMR2 = 0x6060;    // CH4 CH3 pwm mode 2
+    TIM3->CCER |= TIM_CCER_CC4E | TIM_CCER_CC3E | TIM_CCER_CC2E | TIM_CCER_CC1E;    //CH1 enable on pin
 
-#ifdef POWER_MEAS_WITH_SAMPLES
-    TIM3->ARR = 1000;			//seteo en 4KHz para muestreo ADC
+    TIM3->ARR = DUTY_100_PERCENT;
     TIM3->CNT = 0;
-    //TIM3->PSC = 0;
-    TIM3->PSC = 11;
+
+#if (defined USE_FREQ_16KHZ) || (defined USE_FREQ_12KHZ)
+    TIM3->PSC = 0;
+#elif (defined USE_FREQ_8KHZ) || (defined USE_FREQ_6KHZ)
+    TIM3->PSC = 1;
+#elif defined USE_FREQ_4KHZ
+    TIM3->PSC = 2;
+#elif defined USE_FREQ_4_8KHZ
+    TIM3->PSC = 9;
+#else
+#error "set freq on hard.h"
 #endif
-
-#ifdef POWER_MEAS_PEAK_TO_PEAK
-    TIM3->ARR = 255;			//seteo en 15686Hz
-    TIM3->CNT = 0;
-    //TIM3->PSC = 0;
-    TIM3->PSC = 11;
-#endif
-
-    //TIM3->EGR = TIM_EGR_UG;
-
-    // Enable timer ver UDIS
-    //TIM3->DIER |= TIM_DIER_UIE;
-    TIM3->CR1 |= TIM_CR1_CEN;
-
+    
     //Alternative pin config.
     //Alternate Fuction
     unsigned int temp;
     temp = GPIOA->AFR[0];
-    temp &= 0xF0FFFFFF;
-    temp |= 0x01000000;	//PA6 -> AF1
+    temp &= 0x00FFFFFF;
+    temp |= 0x11000000;    // PA7 -> AF1 PA6 -> AF1
     GPIOA->AFR[0] = temp;
-    // GPIOB->AFR[0] = 0x00010000;	//PB4 -> AF1
 
+    temp = GPIOB->AFR[0];
+    temp &= 0xFFFFFF00;
+    temp |= 0x00000011;    // PB1 -> AF1 PB0 -> AF1
+    GPIOB->AFR[0] = temp;
+
+    // Enable timer ver UDIS
+    //TIM3->DIER |= TIM_DIER_UIE;
+    TIM3->CR1 |= TIM_CR1_CEN;
 
 }
 

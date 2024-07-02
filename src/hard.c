@@ -50,7 +50,7 @@ resp_sw_t Check_S1 (void)
 
     if (s1_cntr > SWITCHES_THRESHOLD_MIN)
     {
-        s1_cntr -= SWITCHES_THRESHOLD_MIN;
+        // s1_cntr -= SWITCHES_THRESHOLD_MIN;
         sw = SW_MIN;
     }
 
@@ -62,13 +62,19 @@ resp_sw_t Check_S2 (void)
 {
     resp_sw_t sw = SW_NO;
     
-    if (s2_cntr > SWITCHES_THRESHOLD_FULL)
-        sw = SW_FULL;
-    else if (s2_cntr > SWITCHES_THRESHOLD_HALF)
-        sw = SW_HALF;
-    else if (s2_cntr > SWITCHES_THRESHOLD_MIN)
-        sw = SW_MIN;
+    // if (s2_cntr > SWITCHES_THRESHOLD_FULL)
+    //     sw = SW_FULL;
+    // else if (s2_cntr > SWITCHES_THRESHOLD_HALF)
+    //     sw = SW_HALF;
+    // else if (s2_cntr > SWITCHES_THRESHOLD_MIN)
+    //     sw = SW_MIN;
 
+    if (s2_cntr > SWITCHES_THRESHOLD_MIN)
+    {
+        s2_cntr -= SWITCHES_THRESHOLD_MIN;
+        sw = SW_MIN;
+    }
+    
     return sw;    
 }
 
@@ -101,6 +107,29 @@ void HARD_UpdateSwitches (void)
         
         switches_timer = SWITCHES_TIMER_RELOAD;
     }       
+}
+
+
+sw_actions_t CheckActions (void)
+{
+    sw_actions_t sw = selection_none;
+    
+    if (Check_S1 () > SW_NO)
+        sw = selection_up;
+
+    // if (Check_SW_DWN () > SW_NO)
+    //     sw = selection_dwn;
+
+    resp_sw_t s_sel = SW_NO;
+    s_sel = Check_S2 ();
+    
+    if (s_sel > SW_HALF)
+        sw = selection_back;
+    else if (s_sel > SW_NO)
+        sw = selection_enter;
+    
+    return sw;
+    
 }
 
 

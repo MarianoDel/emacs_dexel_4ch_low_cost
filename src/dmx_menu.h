@@ -20,9 +20,10 @@
 
 
 // Module Exported Functions ---------------------------------------------------
-void Dmx_Menu_Timeout (void);
+void Dmx_Menu_Timeouts (void);
 void Dmx_Menu_Reset (void);
 resp_t Dmx_Menu (parameters_typedef *, sw_actions_t);
+unsigned short Dmx_Menu_GetPacketsTimer (void);
 
 #endif    /* _DMX_MENU_H_ */
 

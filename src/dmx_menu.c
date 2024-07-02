@@ -26,6 +26,7 @@ typedef enum {
     
 } dmx_menu_state_e;
 
+#define TT_DMX_RECEIVING    1000
 
 // Externals -------------------------------------------------------------------
 // - for DMX receiver
@@ -42,6 +43,7 @@ unsigned char dmx_menu_showing = 0;
 unsigned char dmx_menu_out_cnt = 0;
 dmx_menu_state_e dmx_state = DMX_MENU_INIT;
 unsigned char dmx_menu_update_values = 0;
+unsigned short dmx_mode_dmx_receiving_timer = 0;
 
 unsigned char dmx_local_data [4] = { 0 };
 // Module Private Functions ----------------------------------------------------
@@ -52,6 +54,9 @@ void Dmx_Menu_Timeouts (void)
 {
     if (dmx_menu_timer)
         dmx_menu_timer--;
+
+    if (dmx_mode_dmx_receiving_timer)
+        dmx_mode_dmx_receiving_timer--;
 }
 
 void Dmx_Menu_Reset (void)
@@ -96,7 +101,7 @@ resp_t Dmx_Menu (parameters_typedef * mem, sw_actions_t actions)
         SCREEN_Text2_Line2(s_temp);
 
         dmx_need_display_update = 1;
-        resp = resp_change;    //first colors update
+        // resp = resp_change;    //first colors update
         dmx_state++;
         break;
         
@@ -151,7 +156,6 @@ resp_t Dmx_Menu (parameters_typedef * mem, sw_actions_t actions)
                 *pch += 1;
 
             dmx_state--;
-            resp = resp_change;
         }
 
         if (resp == resp_dwn)
@@ -162,7 +166,6 @@ resp_t Dmx_Menu (parameters_typedef * mem, sw_actions_t actions)
                 *pch -= 1;
 
             dmx_state--;            
-            resp = resp_change;
         }
 
         if (!dmx_menu_timer)
@@ -178,12 +181,14 @@ resp_t Dmx_Menu (parameters_typedef * mem, sw_actions_t actions)
 
             if (!dmx_menu_out_cnt)
             {
+                resp = resp_need_to_save;
                 dmx_state = DMX_MENU_SHOW_FIRST;                
             }
         }
 
         if (resp == resp_ok)
         {
+            resp = resp_need_to_save;
             dmx_state = DMX_MENU_SHOW_FIRST;
         }
         break;
@@ -197,6 +202,9 @@ resp_t Dmx_Menu (parameters_typedef * mem, sw_actions_t actions)
     {
         Packet_Detected_Flag = 0;
 
+        // tell the manager we still getting packets
+        dmx_mode_dmx_receiving_timer = TT_DMX_RECEIVING;
+        
         if (dmx_buff_data[0] == 0)
         {
             if ((dmx_local_data[0] != dmx_buff_data[1]) ||
@@ -217,9 +225,7 @@ resp_t Dmx_Menu (parameters_typedef * mem, sw_actions_t actions)
                 // else
                 //     idle_pckt_cnt++;
 
-                //le aviso al menu que se estan recibiendo paquetes dmx
-                // dmx_mode_dmx_receiving_timer = TT_DMX_RECEIVING;
-
+                resp = resp_change;
                 dmx_menu_update_values = 1;
             }
         }
@@ -229,5 +235,10 @@ resp_t Dmx_Menu (parameters_typedef * mem, sw_actions_t actions)
     
 }
 
+
+unsigned short Dmx_Menu_GetPacketsTimer (void)
+{
+    return dmx_mode_dmx_receiving_timer;
+}
 
 //--- end of file ---//

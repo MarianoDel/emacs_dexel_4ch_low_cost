@@ -27,7 +27,7 @@
 
 #include "dmx_receiver.h"
 // #include "temperatures.h"
-
+#include "pwm.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -35,6 +35,7 @@
 
 
 // Externals -------------------------------------------------------------------
+extern volatile unsigned short timer_standby;
 
 // - for DMX receiver
 extern volatile unsigned char dmx_buff_data[];
@@ -78,6 +79,7 @@ void TF_Oled_Screen_Int (void);
 void TF_I2C1_I2C2_Oled (void);
 void TF_Dmx_Packet_Data_Oled_Int (void);
 
+void TF_Pwm_Outputs (void);
 // Module Functions ------------------------------------------------------------
 void TF_Hardware_Tests (void)
 {
@@ -104,7 +106,9 @@ void TF_Hardware_Tests (void)
     // TF_Oled_Screen ();
     
     // TF_Oled_Screen_Int ();
-    TF_Dmx_Packet_Data_Oled_Int ();
+    // TF_Dmx_Packet_Data_Oled_Int ();
+
+    TF_Pwm_Outputs ();
     
 }
 
@@ -322,6 +326,50 @@ void TF_Dmx_Packet_Data (void)
 }
 
 
+void TF_Pwm_Outputs (void)
+{
+    unsigned short pwm_cnt = 0;
+    // Init Oled with ints
+    Wait_ms(1000);
+
+    // OLED Init
+    I2C1_Init();
+    Wait_ms(10);
+
+    // start screen module
+    SCREEN_Init();
+    Wait_ms(10);
+    SCREEN_Text2_Line1 ("Pwm Test  ");    
+    SCREEN_Text2_Line2 ("   Setup  ");
+    Wait_ms(10);    
+        
+    // Init Tim for PWM
+    TIM_3_Init();
+
+    while (1)
+    {
+        if (!timer_standby)
+        {
+            timer_standby = 5000;
+            if (pwm_cnt < 3000)
+            {
+                pwm_cnt += 750;
+            }
+            else
+                pwm_cnt = 0;
+
+            PWM_Update_CH1(pwm_cnt);
+            PWM_Update_CH2(pwm_cnt);
+            PWM_Update_CH3(pwm_cnt);
+            PWM_Update_CH4(pwm_cnt);            
+        }
+
+        display_update_int_state_machine();        
+        
+    }
+}
+
+
 void TF_Temp_Channel (void)
 {
     // Init LCD
@@ -444,7 +492,6 @@ void TF_Oled_Screen (void)
 // Test with I2C with ints
 // enable irqs on i2c.h
 #ifdef I2C_WITH_INTS
-extern volatile unsigned short timer_standby;
 extern void display_update_int_state_machine (void);
 void TF_Oled_Screen_Int (void)
 {

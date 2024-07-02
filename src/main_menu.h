@@ -23,6 +23,7 @@
 
 
 // Exported Functions ----------------------------------------------------------
+void Main_Menu_Timeouts (void);
 void Main_Menu_Reset (void);
 resp_t Main_Menu (mem_bkp_t *, sw_actions_t);
 // unsigned char ConvertCurrentFromMemory (mem_bkp_t * config);

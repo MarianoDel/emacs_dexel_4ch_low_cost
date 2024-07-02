@@ -9,7 +9,7 @@
 
 // Includes --------------------------------------------------------------------
 #include "manager.h"
-// #include "dmx_transceiver.h"
+#include "dmx_receiver.h"
 #include "adc.h"
 #include "usart.h"
 #include "tim.h"
@@ -26,39 +26,27 @@
 #include "screen.h"
 #include "ssd1306_display.h"
 #include "parameters.h"
-// #include "dmx1_mode.h"
-// #include "dmx2_mode.h"
-// #include "master_slave_mode.h"
-// #include "manual_mode.h"
-#include "temperatures.h"
-// #include "options_menu.h"
-// #include "reset_mode.h"
+
+#include "dmx_menu.h"
+#include "manual_menu.h"
 #include "main_menu.h"
 
-#ifdef DMX_ONLY_MODE
-#include "hardware_mode.h"
-#endif
-#ifdef DMX_AND_CCT_MODE
-#include "cct_hardware_mode.h"
-#endif
+#include "temperatures.h"
 
 #include <stdio.h>
 #include <string.h>
+
 // Module Private Types & Macros -----------------------------------------------
 typedef enum {
-    INIT,
-    GET_CONF,
-    MNGR_DMX1_MODE,
-    MNGR_DMX2_MODE,
-    MNGR_MASTER_SLAVE_MODE,
-    MNGR_MANUAL_MODE,
-    MNGR_RESET_MODE,
+    MNGR_INIT,
+    MNGR_CHECK_CONF,    
+    MNGR_DMX_MODE_INIT,
+    MNGR_MANUAL_MODE_INIT,
+    MNGR_IN_DMX_MODE,
+    MNGR_IN_MANUAL_MODE,
     MNGR_ENTERING_MAIN_MENU,
-    MNGR_ENTERING_MAIN_MENU_WAIT_FREE,
-    MNGR_IN_MAIN_MENU,
-    MNGR_ENTERING_HARDWARE_MENU,
-    MNGR_ENTERING_HARDWARE_MENU_WAIT_FREE,
-    MNGR_IN_HARDWARE_MENU
+    MNGR_WAIT_ENTERING_MAIN_MENU,
+    MNGR_IN_MAIN_MENU
     
 } manager_states_e;
 
@@ -67,6 +55,8 @@ typedef enum {
 extern volatile unsigned short DMX_channel_selected;
 extern volatile unsigned char DMX_channel_quantity;
 extern volatile unsigned char Packet_Detected_Flag;
+extern volatile unsigned char dmx_buff_data[];
+extern volatile unsigned char dmx_receive_flag;
 // extern volatile unsigned char DMX_packet_flag;
 
 extern void (* ptFTT ) (void);
@@ -77,25 +67,25 @@ extern volatile unsigned short adc_ch [];
 unsigned char mode_state = 0;
 volatile unsigned short mode_effect_timer = 0;
 
+extern volatile unsigned short timer_standby;
 // -- Externals for the menues
-unsigned char menu_state = 0;
-unsigned char menu_selected = 0;
-unsigned char menu_need_display_update = 0;
-unsigned char menu_selection_show = 0;
-volatile unsigned short menu_menu_timer = 0;
-// options_menu_st mem_options;
-unsigned char menu_counter_out = 0;
+// unsigned char menu_state = 0;
+// unsigned char menu_selected = 0;
+// unsigned char menu_need_display_update = 0;
+// unsigned char menu_selection_show = 0;
+// volatile unsigned short menu_menu_timer = 0;
+// // options_menu_st mem_options;
+// unsigned char menu_counter_out = 0;
 
-extern volatile unsigned short dac_chnls [];
-extern volatile unsigned char pwm_chnls[];
+// extern volatile unsigned short dac_chnls [];
+// extern volatile unsigned char pwm_chnls[];
 
 // -- for temp sense
 extern ma16_u16_data_obj_t temp_filter;
-
+extern unsigned char dmx_local_data [];
 
 // Globals ---------------------------------------------------------------------
-manager_states_e mngr_state = INIT;
-char s_to_send [100];
+manager_states_e mngr_state = MNGR_INIT;
 unsigned char ch_values [6] = { 0 };
 unsigned char need_to_save = 0;
 
@@ -120,67 +110,241 @@ void DisconnectByVoltage (void);
 void DisconnectChannels (void);
 
 // Module Functions ------------------------------------------------------------
+unsigned char packet_cnt = 0;
 void Manager (parameters_typedef * pmem)
 {
-//     sw_actions_t action = do_nothing;
-//     resp_t resp = resp_continue;
+    sw_actions_t action = selection_none;
+    resp_t resp = resp_continue;
     
-//     switch (mngr_state)
-//     {
-//     case INIT:
-//         // hardware reset
-//         DMX_Disable();
+    switch (mngr_state)
+    {
+    case MNGR_INIT:
+        // hardware reset
+        DMX_DisableRx ();
 
-//         // channels reset
-//         FiltersAndOffsets_Filters_Reset();
+        // channels reset
+        FiltersAndOffsets_Filters_Reset();
 
-//         // start and clean filters
-//         DisconnectChannels();
+        // start and clean filters
+        DisconnectChannels();
         
-// #ifdef USART_DEBUG_MODE            
-//         sprintf(s_to_send, "prog type: %d\n", pmem->program_type);
-//         UsartDebug(s_to_send);
-//         Wait_ms(100);
-// #endif
+        // packet reception enable
+        DMX_EnableRx();
+        timer_standby = 1000;    //one second for dmx detection
 
-//         // Init Program Screen
-//         strcpy(s_to_send, "         ");
-//         strcpy(s_to_send + 20, "         ");
-//         switch (pmem->program_type)
-//         {
-//         case DMX1_MODE:
-//             strcpy(s_to_send, "  DMX1 ");
-//             break;
-//         case DMX2_MODE:
-//             strcpy(s_to_send, "  DMX2 ");
-//             break;
-//         case MASTER_SLAVE_MODE:
-//             strcpy(s_to_send, "  Master ");
-//             strcpy(s_to_send + 20, "    Slave");                
-//             break;
-//         case MANUAL_MODE:
-//             strcpy(s_to_send, "  Manual ");
-//             break;
+        mngr_state++;
+        break;
 
-//         case RESET_MODE:
-//             strcpy(s_to_send, "   Reset ");
-//             break;
-                
-//         }
-            
-//         SCREEN_ShowText2(
-//             " Running ",
-//             " on      ",
-//             s_to_send,
-//             s_to_send + 20
-//             );
-//         timer_mngr = 500;
+    case MNGR_CHECK_CONF:
+        if (Packet_Detected_Flag)
+        {
+            Packet_Detected_Flag = 0;
+            packet_cnt++;
+        }
+
+        if ((packet_cnt > 5) &&
+            (timer_standby))
+        {
+            mngr_state = MNGR_DMX_MODE_INIT;
+        }
+        else if (!timer_standby)
+        {
+            mngr_state = MNGR_MANUAL_MODE_INIT;
+        }
+        break;
     
-//         while (timer_mngr)
-//             display_update_int_state_machine();
+    case MNGR_DMX_MODE_INIT:
+        // reception variables
+        DMX_channel_selected = pmem->dmx_first_channel;
+        DMX_channel_quantity = pmem->dmx_channel_quantity;
 
-//         mngr_state++;            
-//         break;
+        // Force first screen
+        Packet_Detected_Flag = 1;
+        dmx_buff_data[0] = 0;
+        dmx_buff_data[1] = 0;
+        dmx_buff_data[2] = 0;
+
+        // Mode Timeout enable
+        ptFTT = &Dmx_Menu_Timeouts;
+
+        // packet reception enable
+        DMX_EnableRx();
+
+        // enable pwm outputs
+        FiltersAndOffsets_Enable_Outputs ();
+
+        Dmx_Menu_Reset ();
+        mngr_state = MNGR_IN_DMX_MODE;
+        packet_cnt = 0;    // reset packet counter for autodetection
+        break;
+
+    case MNGR_MANUAL_MODE_INIT:
+        // packet reception disable, check for colors
+        DMX_DisableRx();
+
+        // Mode Timeout enable
+        ptFTT = &Manual_Menu_Timeouts;
+
+        for (unsigned char n = 0; n < sizeof(ch_values); n++)
+            ch_values[n] = pmem->fixed_channels[n];
+
+        // Comms_Power_Send_Bright(ch_values);
+                
+        Manual_Menu_Reset ();
+        mngr_state = MNGR_IN_MANUAL_MODE;
+        packet_cnt = 0;    // reset packet counter for autodetection
+        break;
+            
+    case MNGR_IN_DMX_MODE:
+        // Check encoder first
+        action = CheckActions();
+
+        if (action != selection_back)
+        {
+                
+            resp = Dmx_Menu (pmem, action);
+
+            if (resp == resp_change)
+            {
+                FiltersAndOffsets_Channels_to_Backup (dmx_local_data);
+            }
+
+            if (resp == resp_need_to_save)
+            {
+                need_to_save_timer = 10000;
+                need_to_save = 1;
+            }
+        }
+        else
+            mngr_state = MNGR_ENTERING_MAIN_MENU;
+
+        // Manual mode autodetection
+        if (Dmx_Menu_GetPacketsTimer () == 0)
+        {
+            if (!timer_standby)
+            {
+                if (packet_cnt < 2)
+                {
+                    packet_cnt++;
+                    timer_standby = 200;
+                }
+                else
+                {
+                    // manual detection
+                    mngr_state = MNGR_MANUAL_MODE_INIT;
+                }
+            }
+        }
+        break;
+
+    case MNGR_IN_MANUAL_MODE:
+        // Check encoder first
+        action = CheckActions();
+        
+        if (action != selection_back)
+        {
+            resp = Manual_Menu (pmem, action);
+
+            if (resp == resp_change)
+            {
+                FiltersAndOffsets_Channels_to_Backup (dmx_local_data);
+                // for (unsigned char n = 0; n < sizeof(ch_values); n++)
+                //     pmem->fixed_channels[n] = ch_values[n];
+
+                // Comms_Power_Send_Bright(ch_values);
+            }
+
+            if (resp == resp_need_to_save)
+            {
+                need_to_save_timer = 10000;
+                need_to_save = 1;
+            }
+        }
+        else
+            mngr_state = MNGR_ENTERING_MAIN_MENU;
+
+        // Dmx presence autodetection
+        if (dmx_receive_flag)
+        {
+            dmx_receive_flag = 0;
+            packet_cnt++;
+            timer_standby = 1000;
+        }
+
+        if (packet_cnt > 5)
+        {
+            if (timer_standby)
+            {
+                // dmx detection
+                mngr_state = MNGR_DMX_MODE_INIT;
+            }
+            else
+            {
+                // dmx not present, reset the counter
+                packet_cnt = 0;
+            }
+        }
+        break;
+
+    case MNGR_ENTERING_MAIN_MENU:
+        // hardware outputs disable
+        DMX_DisableRx();
+
+        // channels reset
+        for (unsigned char n = 0; n < sizeof(ch_values); n++)
+            ch_values[n] = 0;
+
+        Comms_Power_Send_Bright(ch_values);
+
+        // Mode Timeout enable
+        ptFTT = &Main_Menu_Timeouts;
+        
+        // clean display
+        SCREEN_Text2_BlankLine1();
+        SCREEN_Text2_BlankLine2();
+        Wait_ms(250);
+        mngr_state++;
+        break;
+
+    case MNGR_WAIT_ENTERING_MAIN_MENU:
+        if (Check_S2() < SW_HALF)
+            mngr_state = MNGR_INIT;
+        else if (Check_S1() > SW_NO)
+        {
+            Main_Menu_Reset();
+            mngr_state++;
+        }
+        break;
+            
+    case MNGR_IN_MAIN_MENU:
+        action = CheckActions();
+            
+        resp = Main_Menu (pmem, action);
+
+        if (resp == resp_need_to_save)
+        {
+            need_to_save_timer = 0;
+            need_to_save = 1;
+            
+            mngr_state = MNGR_INIT;
+        }
+            
+        if (resp == resp_finish)
+            mngr_state = MNGR_INIT;
+
+        break;
+
+    default:
+        mngr_state = MNGR_INIT;
+        break;
+    }
+
+    // general things
+    HARD_UpdateSwitches();
+
+    // update the oled
+    display_update_int_state_machine();
+    
 
 //     case GET_CONF:
 
@@ -821,10 +985,10 @@ unsigned char CheckTempGreater (unsigned short temp_sample, unsigned short temp_
 
 void DisconnectByVoltage (void)
 {
-    DMX_Disable();
+    DMX_DisableRx();
     FiltersAndOffsets_Disable_Outputs ();
     FiltersAndOffsets_Channels_Reset ();
-    TIM_Deactivate_Channels (0x3F);
+    // TIM_Deactivate_Channels (0x3F);
     // CTRL_FAN_OFF;
 }
 
@@ -833,7 +997,7 @@ void DisconnectChannels (void)
 {
     FiltersAndOffsets_Disable_Outputs ();
     FiltersAndOffsets_Channels_Reset ();
-    TIM_Deactivate_Channels (0x3F);
+    // TIM_Deactivate_Channels (0x3F);
 }
 
 

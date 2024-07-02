@@ -31,6 +31,13 @@
 
 // #define USE_CTROL_FAN_ALWAYS_ON    //fan always
 
+// --- PWM Frequency --- //
+// #define USE_FREQ_16KHZ    //48MHz / 3000pts
+// #define USE_FREQ_12KHZ    //48MHz / 4000pts
+#define USE_FREQ_8KHZ    //24MHz / 3000pts
+// #define USE_FREQ_6KHZ    //24MHz / 4000pts
+// #define USE_FREQ_4KHZ    //16MHz / 4000pts
+// #define USE_FREQ_4_8KHZ    //4.8MHz / 1000pts
 
 //---- End of Features Configuration -------------
 

@@ -21,7 +21,8 @@ typedef enum {
     MANUAL_MENU_INIT = 0,
     MANUAL_MENU_SHOW_FIRST,
     MANUAL_MENU_STANDBY,    
-    MANUAL_MENU_CHANGE_RED,
+    MANUAL_MENU_WAIT_CHANGE_RED,
+    MANUAL_MENU_CHANGE_RED,    
     MANUAL_MENU_CHANGING_RED,
     MANUAL_MENU_CHANGE_GREEN,
     MANUAL_MENU_CHANGING_GREEN,
@@ -116,8 +117,21 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
         }
         break;
 
+    case MANUAL_MENU_WAIT_CHANGE_RED:
+        // wait free
+        if ((actions == selection_up) ||
+            (actions == selection_enter))
+            break;
+        
+        manual_state++;
+        break;
+        
     case MANUAL_MENU_CHANGE_RED:
-
+        // wait free
+        // if ((actions == selection_up) ||
+        //     (actions == selection_enter))
+        //     break;
+        
         SCREEN_Text2_BlankLine1();
         if (manual_menu_showing)
         {
@@ -151,6 +165,8 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
             if (*pch < 255)
                 *pch += 1;
 
+            // // force high velocity update
+            // Options_Up_Dwn_Next (selection_none);
             manual_state--;
             resp = resp_change;
         }
