@@ -26,7 +26,7 @@
 #include "ssd1306_gfx.h"
 
 #include "dmx_receiver.h"
-// #include "temperatures.h"
+#include "temperatures.h"
 #include "pwm.h"
 
 #include <stdio.h>

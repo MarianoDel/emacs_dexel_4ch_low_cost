@@ -15,8 +15,8 @@
 
 // Exported Constants ----------------------------------------------------------
 // -- Sensor Configuration ------------------------------
-// #define TEMP_SENSOR_LM335
-#define TEMP_SENSOR_NTC1K
+#define TEMP_SENSOR_LM335
+// #define TEMP_SENSOR_NTC1K
 
 
 #endif    /* _TEMPERATURES_HARD_DEFS_H_ */

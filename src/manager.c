@@ -86,7 +86,7 @@ extern unsigned char dmx_local_data [];
 
 // Globals ---------------------------------------------------------------------
 manager_states_e mngr_state = MNGR_INIT;
-unsigned char ch_values [6] = { 0 };
+// unsigned char ch_values [6] = { 0 };
 unsigned char need_to_save = 0;
 
 // module timeouts
@@ -184,11 +184,6 @@ void Manager (parameters_typedef * pmem)
 
         // Mode Timeout enable
         ptFTT = &Manual_Menu_Timeouts;
-
-        for (unsigned char n = 0; n < sizeof(ch_values); n++)
-            ch_values[n] = pmem->fixed_channels[n];
-
-        // Comms_Power_Send_Bright(ch_values);
                 
         Manual_Menu_Reset ();
         mngr_state = MNGR_IN_MANUAL_MODE;
@@ -247,11 +242,7 @@ void Manager (parameters_typedef * pmem)
 
             if (resp == resp_change)
             {
-                FiltersAndOffsets_Channels_to_Backup (dmx_local_data);
-                // for (unsigned char n = 0; n < sizeof(ch_values); n++)
-                //     pmem->fixed_channels[n] = ch_values[n];
-
-                // Comms_Power_Send_Bright(ch_values);
+                FiltersAndOffsets_Channels_to_Backup (&(pmem->fixed_channels[0]));
             }
 
             if (resp == resp_need_to_save)
@@ -291,10 +282,10 @@ void Manager (parameters_typedef * pmem)
         DMX_DisableRx();
 
         // channels reset
-        for (unsigned char n = 0; n < sizeof(ch_values); n++)
-            ch_values[n] = 0;
+        // for (unsigned char n = 0; n < sizeof(ch_values); n++)
+        //     ch_values[n] = 0;
 
-        Comms_Power_Send_Bright(ch_values);
+        // Comms_Power_Send_Bright(ch_values);
 
         // Mode Timeout enable
         ptFTT = &Main_Menu_Timeouts;
@@ -345,7 +336,27 @@ void Manager (parameters_typedef * pmem)
     // update the oled
     display_update_int_state_machine();
     
+    // save flash after configs
+    if ((need_to_save) && (!need_to_save_timer))
+    {
+        // need_to_save = Flash_WriteConfigurations();
 
+        // __disable_irq();
+        // need_to_save = Flash_WriteConfigurations(
+        //     (uint32_t *) &mem_conf,
+        //     sizeof(parameters_typedef));
+        // __enable_irq();
+
+#ifdef USART_DEBUG_MODE
+        if (need_to_save)
+            UsartDebug((char *) "Memory Saved OK!\n");
+        else
+            UsartDebug((char *) "Memory problems\n");
+#endif
+
+        need_to_save = 0;
+    }
+    
 //     case GET_CONF:
 
 //         if (pmem->program_type == DMX1_MODE)
