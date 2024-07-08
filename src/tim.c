@@ -109,7 +109,8 @@ void TIM_3_Init (void)
     TIM3->CCMR2 = 0x6060;    // CH4 CH3 pwm mode 2
     TIM3->CCER |= TIM_CCER_CC4E | TIM_CCER_CC3E | TIM_CCER_CC2E | TIM_CCER_CC1E;    //CH1 enable on pin
 
-    TIM3->ARR = DUTY_100_PERCENT;
+    // TIM3->ARR = DUTY_100_PERCENT;
+    TIM3->ARR = 4064;    
     TIM3->CNT = 0;
 
 #if (defined USE_FREQ_16KHZ) || (defined USE_FREQ_12KHZ)

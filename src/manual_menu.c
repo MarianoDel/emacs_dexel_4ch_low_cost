@@ -12,6 +12,7 @@
 #include "screen.h"
 #include "ssd1306_display.h"
 #include "menu_options_oled.h"
+#include "hard.h"
 
 #include "temperatures.h"
 #include "adc.h"
@@ -129,7 +130,7 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
             SCREEN_Text2_BlankLine2();
             if (Manager_Probe_Temp_Get())
             {
-                sprintf(s_temp, "Temp: %dC", Temp_TempToDegrees (Temp_Channel));
+                sprintf(s_temp, "Temp: %dC", Temp_TempToDegreesExtended (Temp_Channel));
                 SCREEN_Text2_Line1(s_temp);
             }
             else
@@ -146,7 +147,8 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
         if ((actions == selection_up) ||
             (actions == selection_enter))
             break;
-        
+
+        Check_S2_Accel_Fast();
         manual_state++;
         break;
         
@@ -219,6 +221,7 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
 
             if (!manual_menu_out_cnt)
             {
+                Check_S2_Accel_Slow();
                 manual_state = MANUAL_MENU_SHOW_FIRST;                
             }
         }
@@ -293,6 +296,7 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
 
             if (!manual_menu_out_cnt)
             {
+                Check_S2_Accel_Slow();
                 manual_state = MANUAL_MENU_SHOW_FIRST;                
             }
         }
@@ -367,6 +371,7 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
 
             if (!manual_menu_out_cnt)
             {
+                Check_S2_Accel_Slow();
                 manual_state = MANUAL_MENU_SHOW_FIRST;                
             }
         }
@@ -441,12 +446,14 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
 
             if (!manual_menu_out_cnt)
             {
-                manual_state = MANUAL_MENU_SHOW_FIRST;                
+                Check_S2_Accel_Slow();
+                manual_state = MANUAL_MENU_SHOW_FIRST;
             }
         }
 
         if (resp == resp_ok)
         {
+            Check_S2_Accel_Slow();
             manual_state = MANUAL_MENU_SHOW_FIRST;
         }
         break;

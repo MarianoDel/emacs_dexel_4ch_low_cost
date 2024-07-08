@@ -58,26 +58,43 @@ resp_sw_t Check_S1 (void)
 }
 
 
+unsigned char s2_accel = 0;
 resp_sw_t Check_S2 (void)
 {
     resp_sw_t sw = SW_NO;
-    
-    // if (s2_cntr > SWITCHES_THRESHOLD_FULL)
-    //     sw = SW_FULL;
-    // else if (s2_cntr > SWITCHES_THRESHOLD_HALF)
-    //     sw = SW_HALF;
-    // else if (s2_cntr > SWITCHES_THRESHOLD_MIN)
-    //     sw = SW_MIN;
 
-    if (s2_cntr > SWITCHES_THRESHOLD_MIN)
+    if (!s2_accel)
     {
-        s2_cntr -= SWITCHES_THRESHOLD_MIN;
-        sw = SW_MIN;
+        if (s2_cntr > SWITCHES_THRESHOLD_FULL)
+            sw = SW_FULL;
+        else if (s2_cntr > SWITCHES_THRESHOLD_HALF)
+            sw = SW_HALF;
+        else if (s2_cntr > SWITCHES_THRESHOLD_MIN)
+            sw = SW_MIN;
+    }
+    else
+    {
+        if (s2_cntr > SWITCHES_THRESHOLD_MIN)
+        {
+            s2_cntr -= SWITCHES_THRESHOLD_MIN;
+            sw = SW_MIN;
+        }
     }
     
     return sw;    
 }
 
+
+void Check_S2_Accel_Fast (void)
+{
+    s2_accel = 1;
+}
+
+
+void Check_S2_Accel_Slow (void)
+{
+    s2_accel = 0;
+}
 
 void HARD_UpdateSwitches (void)
 {

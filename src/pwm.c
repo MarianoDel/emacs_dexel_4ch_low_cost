@@ -35,7 +35,23 @@ void PWMChannelsReset (void)
 }
 
 
-// maps 255 to the correspondig duty_100_percent value
+// 255 * 255 or 255 * 128
+unsigned short PWM_Map_From_Dmx_Short (unsigned short adj_val)
+{
+    unsigned int pwm = 0;
+
+    if (adj_val)
+    {
+        pwm = adj_val >> 4;
+        if (pwm < 29)
+            pwm = 29;
+    }
+
+    return (unsigned short) pwm;
+
+}
+
+
 unsigned short PWM_Map_From_Dmx (unsigned char dmx_val)
 {
     unsigned int pwm = 0;
@@ -59,7 +75,7 @@ unsigned short PWM_Map_From_Dmx (unsigned char dmx_val)
     {
         pwm = dmx_val * 117;
         pwm = pwm / 10;
-        pwm += 7;
+        pwm += 18;
     }
 #elif (DUTY_100_PERCENT == 4000)
     if (dmx_val)

@@ -192,7 +192,8 @@ int main(void)
         mem_conf.max_current_channels[2] = 255;
         mem_conf.max_current_channels[3] = 255;
         mem_conf.program_type = AUTODETECT_MODE;    //force mem save        
-        mem_conf.temp_prot = TEMP_IN_70;    //70 degrees
+        mem_conf.temp_prot_deg = 70;    //70 degrees
+        mem_conf.temp_prot = TEMP_IN_70;    //70 degrees        
 #ifdef USART2_DEBUG_MODE
         Usart2Send("memory empty, set defaults\r\n");
 #endif

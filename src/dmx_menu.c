@@ -14,6 +14,7 @@
 #include "menu_options_oled.h"
 #include "adc.h"
 #include "temperatures.h"
+#include "hard.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -23,7 +24,8 @@
 typedef enum {
     DMX_MENU_INIT = 0,
     DMX_MENU_SHOW_FIRST,
-    DMX_MENU_STANDBY,    
+    DMX_MENU_STANDBY,
+    DMX_MENU_WAIT_CHANGE_ADDRESS,
     DMX_MENU_CHANGE_ADDRESS,
     DMX_MENU_CHANGING_ADDRESS,
     DMX_MENU_SHOW_TEMP
@@ -125,7 +127,7 @@ resp_t Dmx_Menu (parameters_typedef * mem, sw_actions_t actions)
             SCREEN_Text2_BlankLine2();
             if (Manager_Probe_Temp_Get())
             {
-                sprintf(s_temp, "Temp: %dC", Temp_TempToDegrees (Temp_Channel));
+                sprintf(s_temp, "Temp: %dC", Temp_TempToDegreesExtended (Temp_Channel));
                 SCREEN_Text2_Line1(s_temp);
             }
             else
@@ -140,6 +142,16 @@ resp_t Dmx_Menu (parameters_typedef * mem, sw_actions_t actions)
             dmx_menu_update_values = 0;
             dmx_state--;
         }
+        break;
+
+    case DMX_MENU_WAIT_CHANGE_ADDRESS:
+        // wait free
+        if ((actions == selection_up) ||
+            (actions == selection_enter))
+            break;
+
+        Check_S2_Accel_Fast();
+        dmx_state++;
         break;
 
     case DMX_MENU_CHANGE_ADDRESS:
@@ -177,6 +189,7 @@ resp_t Dmx_Menu (parameters_typedef * mem, sw_actions_t actions)
                 *pch += 1;
 
             dmx_state--;
+            DMX_channel_selected = mem->dmx_first_channel;
         }
 
         if (resp == resp_dwn)
@@ -186,7 +199,8 @@ resp_t Dmx_Menu (parameters_typedef * mem, sw_actions_t actions)
             if (*pch > 1)
                 *pch -= 1;
 
-            dmx_state--;            
+            dmx_state--;
+            DMX_channel_selected = mem->dmx_first_channel;            
         }
 
         if (!dmx_menu_timer)
@@ -203,12 +217,14 @@ resp_t Dmx_Menu (parameters_typedef * mem, sw_actions_t actions)
             if (!dmx_menu_out_cnt)
             {
                 resp = resp_need_to_save;
+                Check_S2_Accel_Slow();
                 dmx_state = DMX_MENU_SHOW_FIRST;                
             }
         }
 
         if (resp == resp_ok)
         {
+            Check_S2_Accel_Slow();
             resp = resp_need_to_save;
             dmx_state = DMX_MENU_SHOW_FIRST;
         }

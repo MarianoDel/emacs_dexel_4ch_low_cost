@@ -59,6 +59,7 @@ void Main_Menu_Reset (void)
 }
 
 
+unsigned char main_menu_config_change = 0;
 resp_t Main_Menu (parameters_typedef * mem, sw_actions_t actions)
 {
     unsigned char main_need_display_update = 0;
@@ -78,9 +79,10 @@ resp_t Main_Menu (parameters_typedef * mem, sw_actions_t actions)
         break;
 
     case MAIN_MENU_WAIT_INIT:
-        if (main_menu_timer)
+        if ((main_menu_timer) || (actions != selection_none))
             break;
-        
+
+        Check_S2_Accel_Fast();
         SCREEN_Text2_BlankLine1();
         SCREEN_Text2_BlankLine2();
         main_menu_state++;
@@ -114,22 +116,21 @@ resp_t Main_Menu (parameters_typedef * mem, sw_actions_t actions)
         if (resp == resp_up)
         {
             unsigned char * pch = &(mem->max_current_channels[0]);
-            // if actions selection_all_up, change fast
             if (*pch < 255)
                 *pch += 1;
 
             main_menu_state--;
-            // resp = resp_change;
+            main_menu_config_change = 1;
         }
 
         if (resp == resp_dwn)
         {
             unsigned char * pch = &(mem->max_current_channels[0]);
-            // if actions selection_all_up, change fast
             if (*pch > 1)
                 *pch -= 1;
 
-            main_menu_state--;            
+            main_menu_state--;
+            main_menu_config_change = 1;            
         }
 
         if (!main_menu_timer)
@@ -148,7 +149,12 @@ resp_t Main_Menu (parameters_typedef * mem, sw_actions_t actions)
                 for (int i = 1; i < 4; i++)
                     mem->max_current_channels[i] = mem->max_current_channels[0];
 
-                main_menu_state = MAIN_MENU_INIT;                
+                Check_S2_Accel_Slow();
+                main_menu_state = MAIN_MENU_INIT;
+
+                if (main_menu_config_change)
+                    resp = resp_need_to_save;
+                    
             }
         }
 
@@ -192,23 +198,21 @@ resp_t Main_Menu (parameters_typedef * mem, sw_actions_t actions)
         if (resp == resp_up)
         {
             unsigned char * pch = &(mem->temp_prot_deg);
-            // if actions selection_all_up, change fast
             if (*pch < 100)
                 *pch += 1;
 
             main_menu_state--;
-            // resp = resp_change;
+            main_menu_config_change = 1;
         }
 
         if (resp == resp_dwn)
         {
             unsigned char * pch = &(mem->temp_prot_deg);
-            // if actions selection_all_up, change fast
-            if (*pch > 30)
+            if (*pch > 50)
                 *pch -= 1;
 
             main_menu_state--;            
-            // resp = resp_change;
+            main_menu_config_change = 1;
         }
 
         if (!main_menu_timer)
@@ -224,7 +228,11 @@ resp_t Main_Menu (parameters_typedef * mem, sw_actions_t actions)
 
             if (!main_menu_out_cnt)
             {
-                main_menu_state = MAIN_MENU_INIT;                
+                main_menu_state = MAIN_MENU_INIT;
+                Check_S2_Accel_Slow();
+
+                if (main_menu_config_change)
+                    resp = resp_need_to_save;
             }
         }
 
@@ -251,8 +259,17 @@ resp_t Main_Menu (parameters_typedef * mem, sw_actions_t actions)
         
         SCREEN_Text2_BlankLine1();
         SCREEN_Text2_BlankLine2();
-
-        resp = resp_ok;
+        main_menu_state = MAIN_MENU_INIT;
+        Check_S2_Accel_Slow();
+        
+        if (main_menu_config_change)
+        {
+            main_menu_config_change = 0;
+            resp = resp_need_to_save;
+        }
+        else
+            resp = resp_ok;
+        
         break;
     }
 

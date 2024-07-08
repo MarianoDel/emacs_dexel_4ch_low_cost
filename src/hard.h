@@ -133,6 +133,8 @@ void HARD_Timeouts (void);
 
 resp_sw_t Check_S1 (void);
 resp_sw_t Check_S2 (void);
+void Check_S2_Accel_Fast (void);
+void Check_S2_Accel_Slow (void);
 
 void HARD_UpdateSwitches (void);
 char * HARD_GetHardwareVersion (void);
