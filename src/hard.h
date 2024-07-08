@@ -39,6 +39,9 @@
 // #define USE_FREQ_4KHZ    //16MHz / 4000pts
 // #define USE_FREQ_4_8KHZ    //4.8MHz / 1000pts
 
+// --- Usart2 Modes --- //
+#define USART2_DEBUG_MODE
+
 //---- End of Features Configuration -------------
 
 //-------- End Of Defines For Configuration ------

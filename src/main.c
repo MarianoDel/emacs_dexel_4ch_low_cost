@@ -69,6 +69,10 @@ extern char s_blank [];
 // - Externals from ADC Converter -------
 volatile unsigned short adc_ch [ADC_CHANNEL_QUANTITY];
 
+// - Externals for temp prot
+ma16_u16_data_obj_t temp_filter;
+
+
 // - Externals de la Memoria y los modos -------
 parameters_typedef * pflash_mem = (parameters_typedef *) (unsigned int *) FLASH_ADDRESS_FOR_BKP;    //en flash
 parameters_typedef mem_conf;
@@ -87,24 +91,15 @@ volatile unsigned short mode_effect_timer;
 // Globals ---------------------------------------------------------------------
 // - Globals from timers -------
 volatile unsigned short timer_standby = 0;
-// volatile unsigned short need_to_save_timer = 0;
-
-#ifdef USE_TEMP_PROT
-unsigned short timer_temp = 0;
-ma16_u16_data_obj_t temp_filter;
-#endif
 
 // -- for the timeouts in the modes ----
 void (* ptFTT ) (void) = NULL;
-
-// -- for the memory -------------------
-// unsigned char need_to_save = 0;
 
 
 // Module Private Functions ----------------------------------------------------
 void TimingDelay_Decrement(void);
 void SysTickError (void);
-unsigned char CheckTempGreater (unsigned short temp_sample, unsigned short temp_prot);
+void EXTI4_15_IRQHandler(void);
 
 
 //-------------------------------------------//
@@ -158,6 +153,8 @@ int main(void)
     // Start Tim for PWm
     TIM_3_Init ();
 
+    // Init Usart2 for debug or colors fixed setup
+    Usart2Config();
     
     // --- Welcome Code ------------
     SCREEN_Clear ();
@@ -180,29 +177,29 @@ int main(void)
     {
         //memory with valid data
         memcpy(&mem_conf, pflash_mem, sizeof(parameters_typedef));
+#ifdef USART2_DEBUG_MODE
+        Usart2Send("memory is saved with valid data\r\n");
+#endif
+        
     }
     else
     {
         // Default mem config
-        // mem_conf.program_type = DMX1_MODE;
-        // mem_conf.master_send_dmx_enable = 0;
-        // mem_conf.program_inner_type = MANUAL_NO_INNER_MODE;
-        // mem_conf.program_inner_type_speed = 0;
-
-        // mem_conf.max_power = 1530;
         mem_conf.dmx_first_channel = 1;
         mem_conf.dmx_channel_quantity = 4;
         mem_conf.max_current_channels[0] = 255;
         mem_conf.max_current_channels[1] = 255;
         mem_conf.max_current_channels[2] = 255;
         mem_conf.max_current_channels[3] = 255;
-        // mem_conf.max_current_channels[4] = 255;
-        // mem_conf.max_current_channels[5] = 255;
-        
+        mem_conf.program_type = AUTODETECT_MODE;    //force mem save        
         mem_conf.temp_prot = TEMP_IN_70;    //70 degrees
+#ifdef USART2_DEBUG_MODE
+        Usart2Send("memory empty, set defaults\r\n");
+#endif
+        
     }
 
-    //-- check NTC connection on init --
+    //-- check NTC or LM335 connection on init --
 #ifdef TEMP_SENSOR_NTC1K
     unsigned short temp_filtered = 0;
     MA16_U16Circular_Reset(&temp_filter);
@@ -215,12 +212,29 @@ int main(void)
     if (temp_filtered < NTC_SHORTED)
     {
         CTRL_FAN_ON;
-        Manager_Ntc_Reset();
+        Manager_Probe_Temp_Reset();
     }
     else
-        Manager_Ntc_Set();
+        Manager_Probe_Temp_Set();
 #endif
-    // -- end of check NTC connection on init --
+#ifdef TEMP_SENSOR_LM335
+    unsigned short temp_filtered = 0;
+    MA16_U16Circular_Reset(&temp_filter);
+    for (int i = 0; i < 16; i++)
+    {
+        temp_filtered = MA16_U16Circular(&temp_filter, Temp_Channel);
+        Wait_ms(30);
+    }
+
+    if (temp_filtered < LM335_SHORTED)
+    {
+        CTRL_FAN_ON;
+        Manager_Probe_Temp_Reset();
+    }
+    else
+        Manager_Probe_Temp_Set();
+#endif
+    // -- end of check NTC or LM335 connection on init --
     
     // main program
     while (1)
@@ -714,23 +728,6 @@ int main(void)
 
 
 // Module Private Functions ----------------------------------------------------
-// unsigned char CheckTempGreater (unsigned short temp_sample, unsigned short temp_prot)
-// {
-//     unsigned char is_greater = 0;
-
-// #ifdef TEMP_SENSOR_LM335
-//     if (temp_sample > temp_prot)
-//         is_greater = 1;
-// #endif
-// #ifdef TEMP_SENSOR_NTC1K
-//     if (temp_sample < temp_prot)    // see it in voltage
-//         is_greater = 1;
-// #endif
-    
-//     return is_greater;
-// }
-
-
 void EXTI4_15_IRQHandler(void)
 {
     DMX_Int_Break_Handler();
@@ -739,7 +736,6 @@ void EXTI4_15_IRQHandler(void)
 }
 
 
-extern unsigned char dmx_local_data [];
 void TimingDelay_Decrement(void)
 {
     TIM_Timeouts ();
@@ -747,18 +743,17 @@ void TimingDelay_Decrement(void)
     if (timer_standby)
         timer_standby--;
 
-    // if (need_to_save_timer)
-    //     need_to_save_timer--;
-
     HARD_Timeouts();
 
     DMX_Int_Millis_Handler ();
+
+    Manager_Timeouts ();
     
     // Modes Menus Timers
     if (ptFTT != NULL)
         ptFTT();
 
-    FiltersAndOffsets_Calc_SM (dmx_local_data);
+    FiltersAndOffsets_Calc_SM ();
     // USART_Timeouts();
     // Comms_Power_Timeouts ();
 

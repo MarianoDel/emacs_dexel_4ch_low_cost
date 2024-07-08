@@ -44,26 +44,14 @@ typedef struct parameters {
     //-- For Manual mode settings ----   //6
     unsigned char fixed_channels [4];
 
-    //-- For Max Current Channels settings ----   //8
-    unsigned char max_current_channels [4];    
+    //-- For Max Current Channels settings ----   //10
+    unsigned char max_current_channels [4];
+    unsigned char dummy2 [2];
     
-    //-- Current Set ----    //10
-    unsigned char current_eight_amps;
-
-    //-- Channels Operation Mode ----    //11
-    unsigned char channels_operation_mode;
-
-    //-- For Temperature Protection ----    //12
+    //-- For Temperature Protection ----    //16
     unsigned short temp_prot;    // 2 bytes if its aligned to 4
     unsigned char temp_prot_deg;
-
-    //-- For new channels current ---- //15
-    unsigned char current_int;
-    unsigned char current_dec;
-
-    //-- Hardware config ---- //17
-    unsigned char encoder_direction;
-    unsigned char dummy2 [6];
+    unsigned char dummy3 [5];
     // unsigned char dummy2;          
     // unsigned char dummy3;       
 

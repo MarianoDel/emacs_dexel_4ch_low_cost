@@ -10,6 +10,7 @@
 // Includes --------------------------------------------------------------------
 #include "main_menu.h"
 #include "screen.h"
+#include "ssd1306_display.h"
 #include "menu_options_oled.h"
 // #include "temperatures.h"
 #include "hard.h"

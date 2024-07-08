@@ -13,12 +13,9 @@
 #include "adc.h"
 #include "usart.h"
 #include "tim.h"
-
-// #include "stm32f10x.h"
-
-#include "filters_and_offsets.h"
 #include "flash_program.h"
 
+#include "filters_and_offsets.h"
 // #include "comm.h"
 #include "dsp.h"
 
@@ -92,16 +89,11 @@ unsigned char need_to_save = 0;
 // module timeouts
 volatile unsigned short need_to_save_timer = 0;
 volatile unsigned short timer_mngr = 0;
-
-#if (defined USE_OVERTEMP_PROT) || \
-    (defined USE_VOLTAGE_PROT) || \
-    (defined USE_NTC_DETECTION)
 volatile unsigned char protections_sample_timer = 0;
-// volatile unsigned short protections_sample_timer = 5000;    //start with this if initial overtemp fails exists
-#endif
+
 
 // -- for temp sense
-unsigned char check_ntc = 0;
+unsigned char check_probe_temp = 0;
 
 
 // Module Private Functions ----------------------------------------------------
@@ -110,7 +102,20 @@ void DisconnectByVoltage (void);
 void DisconnectChannels (void);
 
 // Module Functions ------------------------------------------------------------
+void Manager_Timeouts (void)
+{
+    if (need_to_save_timer)
+        need_to_save_timer--;
+
+    if (timer_mngr)
+        timer_mngr--;    
+    
+    if (protections_sample_timer)
+        protections_sample_timer--;
+}
+
 unsigned char packet_cnt = 0;
+unsigned char showing_temp = 0;
 void Manager (parameters_typedef * pmem)
 {
     sw_actions_t action = selection_none;
@@ -184,7 +189,10 @@ void Manager (parameters_typedef * pmem)
 
         // Mode Timeout enable
         ptFTT = &Manual_Menu_Timeouts;
-                
+
+        // enable pwm outputs
+        FiltersAndOffsets_Enable_Outputs ();
+        
         Manual_Menu_Reset ();
         mngr_state = MNGR_IN_MANUAL_MODE;
         packet_cnt = 0;    // reset packet counter for autodetection
@@ -195,8 +203,7 @@ void Manager (parameters_typedef * pmem)
         action = CheckActions();
 
         if (action != selection_back)
-        {
-                
+        {            
             resp = Dmx_Menu (pmem, action);
 
             if (resp == resp_change)
@@ -240,7 +247,8 @@ void Manager (parameters_typedef * pmem)
         {
             resp = Manual_Menu (pmem, action);
 
-            if (resp == resp_change)
+            if ((resp == resp_change) ||
+                (resp == resp_need_to_save))
             {
                 FiltersAndOffsets_Channels_to_Backup (&(pmem->fixed_channels[0]));
             }
@@ -249,6 +257,9 @@ void Manager (parameters_typedef * pmem)
             {
                 need_to_save_timer = 10000;
                 need_to_save = 1;
+// #ifdef USART2_DEBUG_MODE
+//                 Usart2Send("manual ask save\r\n");
+// #endif                
             }
         }
         else
@@ -341,20 +352,66 @@ void Manager (parameters_typedef * pmem)
     {
         // need_to_save = Flash_WriteConfigurations();
 
-        // __disable_irq();
-        // need_to_save = Flash_WriteConfigurations(
-        //     (uint32_t *) &mem_conf,
-        //     sizeof(parameters_typedef));
-        // __enable_irq();
+        __disable_irq();
+        need_to_save = Flash_WriteConfigurations(
+            (uint32_t *) pmem,
+            sizeof(parameters_typedef));
+        __enable_irq();
 
-#ifdef USART_DEBUG_MODE
+#ifdef USART2_DEBUG_MODE
         if (need_to_save)
-            UsartDebug((char *) "Memory Saved OK!\n");
+            Usart2Send((char *) "Memory Saved OK!\n");
         else
-            UsartDebug((char *) "Memory problems\n");
+            Usart2Send((char *) "Memory problems\n");
 #endif
 
         need_to_save = 0;
+    }
+
+    // Check Temp prot
+    if (Manager_Probe_Temp_Get())
+    {
+        if ((mngr_state < MNGR_ENTERING_MAIN_MENU) &&
+            (!protections_sample_timer))
+        {
+            unsigned short temp_filtered = 0;
+            temp_filtered = MA16_U16Circular(&temp_filter, Temp_Channel);
+
+            if (CheckTempGreater (temp_filtered, pmem->temp_prot))
+            {
+                //stop LEDs outputs
+                DisconnectByVoltage();
+                CTRL_FAN_ON;
+
+                SCREEN_Text2_BlankLine1();
+                SCREEN_Text2_BlankLine2();
+                SCREEN_Text2_Line1("LEDs      ");
+                SCREEN_Text2_Line2("Overtemp  ");        
+
+#ifdef USART2_DEBUG_MODE
+                char s_to_send[30];
+                sprintf(s_to_send, "overtemp: %d\n", temp_filtered);
+                Usart2Send(s_to_send);
+#endif
+
+                do {
+                    display_update_int_state_machine();
+                } while (CheckTempGreater (Temp_Channel, TEMP_RECONNECT));
+                    
+                //reconnect
+                mngr_state = MNGR_INIT;
+            }
+            else if (CheckTempGreater (temp_filtered, TEMP_IN_35))
+            {
+                CTRL_FAN_ON;
+            }
+            else if (CheckTempGreater (TEMP_IN_30, temp_filtered))
+            {
+                CTRL_FAN_OFF;
+            }
+
+            protections_sample_timer = 10;
+        }
     }
     
 //     case GET_CONF:
@@ -947,33 +1004,21 @@ void Manager (parameters_typedef * pmem)
 }
 
 
-void Manager_Ntc_Set (void)
+unsigned char Manager_Probe_Temp_Get (void)
 {
-    check_ntc = 1;
+    return check_probe_temp;
+}
+        
+
+void Manager_Probe_Temp_Set (void)
+{
+    check_probe_temp = 1;
 }
 
 
-void Manager_Ntc_Reset (void)
+void Manager_Probe_Temp_Reset (void)
 {
-    check_ntc = 0;
-}
-
-
-void Manager_Timeouts (void)
-{
-    if (need_to_save_timer)
-        need_to_save_timer--;
-
-    if (timer_mngr)
-        timer_mngr--;    
-    
-#if (defined USE_VOLTAGE_PROT) || \
-    (defined USE_OVERTEMP_PROT) || \
-    (defined USE_NTC_DETECTION)
-    if (protections_sample_timer)
-        protections_sample_timer--;
-#endif
-
+    check_probe_temp = 0;
 }
 
 

@@ -10,7 +10,10 @@
 // Includes --------------------------------------------------------------------
 #include "dmx_menu.h"
 #include "screen.h"
+#include "ssd1306_display.h"
 #include "menu_options_oled.h"
+#include "adc.h"
+#include "temperatures.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -22,7 +25,8 @@ typedef enum {
     DMX_MENU_SHOW_FIRST,
     DMX_MENU_STANDBY,    
     DMX_MENU_CHANGE_ADDRESS,
-    DMX_MENU_CHANGING_ADDRESS
+    DMX_MENU_CHANGING_ADDRESS,
+    DMX_MENU_SHOW_TEMP
     
 } dmx_menu_state_e;
 
@@ -36,6 +40,7 @@ extern volatile unsigned short DMX_channel_selected;
 extern volatile unsigned char DMX_channel_quantity;
 extern volatile unsigned char dmx_receive_flag;
 
+extern volatile unsigned short adc_ch [];
 
 // Globals ---------------------------------------------------------------------
 volatile unsigned short dmx_menu_timer = 0;
@@ -106,14 +111,30 @@ resp_t Dmx_Menu (parameters_typedef * mem, sw_actions_t actions)
         break;
         
     case DMX_MENU_STANDBY:
-        if ((actions == selection_up) ||
-            (actions == selection_enter))
+        if (actions == selection_enter)
         {
             Options_Up_Dwn_Select_Reset();
             dmx_menu_out_cnt = 20;
             dmx_state++;
         }
 
+        if (actions == selection_up)
+        {
+            char s_temp [20];
+            SCREEN_Text2_BlankLine1();
+            SCREEN_Text2_BlankLine2();
+            if (Manager_Probe_Temp_Get())
+            {
+                sprintf(s_temp, "Temp: %dC", Temp_TempToDegrees (Temp_Channel));
+                SCREEN_Text2_Line1(s_temp);
+            }
+            else
+                SCREEN_Text2_Line1("Temp: NC");
+            
+            dmx_menu_timer = 1200;
+            dmx_state = DMX_MENU_SHOW_TEMP;
+        }
+        
         if (dmx_menu_update_values)
         {
             dmx_menu_update_values = 0;
@@ -192,6 +213,13 @@ resp_t Dmx_Menu (parameters_typedef * mem, sw_actions_t actions)
             dmx_state = DMX_MENU_SHOW_FIRST;
         }
         break;
+
+    case DMX_MENU_SHOW_TEMP:
+        if (!dmx_menu_timer)
+            dmx_state = DMX_MENU_SHOW_FIRST;
+        
+        break;
+        
     }        
 
     if (dmx_need_display_update)

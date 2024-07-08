@@ -91,7 +91,7 @@ SRC += ./src/dmx_receiver.c
 
 SRC += ./src/manager.c
 
-# SRC += ./src/temperatures.c
+SRC += ./src/temperatures.c
 SRC += ./src/menu_options_oled.c
 SRC += ./src/dmx_menu.c
 SRC += ./src/main_menu.c

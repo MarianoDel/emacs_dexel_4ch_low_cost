@@ -10,7 +10,11 @@
 // Includes --------------------------------------------------------------------
 #include "manual_menu.h"
 #include "screen.h"
+#include "ssd1306_display.h"
 #include "menu_options_oled.h"
+
+#include "temperatures.h"
+#include "adc.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -29,12 +33,14 @@ typedef enum {
     MANUAL_MENU_CHANGE_BLUE,
     MANUAL_MENU_CHANGING_BLUE,
     MANUAL_MENU_CHANGE_WHITE,    
-    MANUAL_MENU_CHANGING_WHITE
+    MANUAL_MENU_CHANGING_WHITE,
+    MANUAL_MENU_SHOW_TEMP
     
 } manual_menu_state_e;
 
 
 // Externals -------------------------------------------------------------------
+extern volatile unsigned short adc_ch [];
 
 
 // Globals ---------------------------------------------------------------------
@@ -108,13 +114,31 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
         break;
         
     case MANUAL_MENU_STANDBY:
-        if ((actions == selection_up) ||
-            (actions == selection_enter))
+        // for temp
+        if (actions == selection_enter)
         {
             Options_Up_Dwn_Select_Reset();
             manual_menu_out_cnt = 20;
             manual_state++;
         }
+
+        if (actions == selection_up)
+        {
+            char s_temp [20];
+            SCREEN_Text2_BlankLine1();
+            SCREEN_Text2_BlankLine2();
+            if (Manager_Probe_Temp_Get())
+            {
+                sprintf(s_temp, "Temp: %dC", Temp_TempToDegrees (Temp_Channel));
+                SCREEN_Text2_Line1(s_temp);
+            }
+            else
+                SCREEN_Text2_Line1("Temp: NC");
+            
+            manual_menu_timer = 1200;
+            manual_state = MANUAL_MENU_SHOW_TEMP;
+        }
+        // end for temp
         break;
 
     case MANUAL_MENU_WAIT_CHANGE_RED:
@@ -168,7 +192,7 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
             // // force high velocity update
             // Options_Up_Dwn_Next (selection_none);
             manual_state--;
-            resp = resp_change;
+            resp = resp_need_to_save;
         }
 
         if (resp == resp_dwn)
@@ -179,7 +203,7 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
                 *pch -= 1;
 
             manual_state--;            
-            resp = resp_change;
+            resp = resp_need_to_save;
         }
 
         if (!manual_menu_timer)
@@ -242,7 +266,7 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
                 *pch += 1;
 
             manual_state--;
-            resp = resp_change;
+            resp = resp_need_to_save;
         }
 
         if (resp == resp_dwn)
@@ -253,7 +277,7 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
                 *pch -= 1;
             
             manual_state--;
-            resp = resp_change;
+            resp = resp_need_to_save;
         }
 
         if (!manual_menu_timer)
@@ -316,7 +340,7 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
                 *pch += 1;
 
             manual_state--;
-            resp = resp_change;
+            resp = resp_need_to_save;
         }
 
         if (resp == resp_dwn)
@@ -327,7 +351,7 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
                 *pch -= 1;
             
             manual_state--;
-            resp = resp_change;
+            resp = resp_need_to_save;
         }
 
         if (!manual_menu_timer)
@@ -390,7 +414,7 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
                 *pch += 1;
 
             manual_state--;
-            resp = resp_change;
+            resp = resp_need_to_save;
         }
 
         if (resp == resp_dwn)
@@ -401,7 +425,7 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
                 *pch -= 1;
             
             manual_state--;
-            resp = resp_change;
+            resp = resp_need_to_save;
         }
 
         if (!manual_menu_timer)
@@ -425,6 +449,12 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
         {
             manual_state = MANUAL_MENU_SHOW_FIRST;
         }
+        break;
+
+    case MANUAL_MENU_SHOW_TEMP:
+        if (!manual_menu_timer)
+            manual_state = MANUAL_MENU_SHOW_FIRST;
+        
         break;
     }
 

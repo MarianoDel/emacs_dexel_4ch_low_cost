@@ -33,7 +33,7 @@ ma16_u16_data_obj_t st_sp2;
 ma16_u16_data_obj_t st_sp3;
 ma16_u16_data_obj_t st_sp4;
 
-volatile unsigned char ch_dmx_val [4] = { 0 };
+volatile unsigned char ch_bkp_val [4] = { 0 };
 volatile unsigned short limit_output [4] = { 0 };
 
 volatile unsigned char filters_enable_outputs = 0;
@@ -47,10 +47,10 @@ volatile unsigned char filters_enable_outputs = 0;
 void FiltersAndOffsets_Channels_to_Backup (unsigned char * channels)
 {
     // __disable_irq();
-    *(ch_dmx_val + 0) = *(channels + 0);
-    *(ch_dmx_val + 1) = *(channels + 1);
-    *(ch_dmx_val + 2) = *(channels + 2);
-    *(ch_dmx_val + 3) = *(channels + 3);
+    *(ch_bkp_val + 0) = *(channels + 0);
+    *(ch_bkp_val + 1) = *(channels + 1);
+    *(ch_bkp_val + 2) = *(channels + 2);
+    *(ch_bkp_val + 3) = *(channels + 3);
     // __enable_irq();
 }
 
@@ -77,7 +77,7 @@ typedef enum {
 } filters_and_offsets_e;
 
 filters_and_offsets_e filters_sm = FILTERS_BKP_CHANNELS;
-void FiltersAndOffsets_Calc_SM (volatile unsigned char * ch_dmx_val)
+void FiltersAndOffsets_Calc_SM (void)
 {
     unsigned short calc = 0;
     unsigned short ch_pwm = 0;
@@ -88,10 +88,10 @@ void FiltersAndOffsets_Calc_SM (volatile unsigned char * ch_dmx_val)
     switch (filters_sm)
     {
     case FILTERS_BKP_CHANNELS:
-        limit_output[0] = *(ch_dmx_val + 0);
-        limit_output[1] = *(ch_dmx_val + 1);
-        limit_output[2] = *(ch_dmx_val + 2);
-        limit_output[3] = *(ch_dmx_val + 3);
+        limit_output[0] = *(ch_bkp_val + 0);
+        limit_output[1] = *(ch_bkp_val + 1);
+        limit_output[2] = *(ch_bkp_val + 2);
+        limit_output[3] = *(ch_bkp_val + 3);
         filters_sm++;
         break;
 
@@ -215,7 +215,7 @@ void FiltersAndOffsets_Channels_Reset (void)
 {
     for (int i = 0; i < 4; i++)
     {
-        ch_dmx_val [i] = 0;
+        ch_bkp_val [i] = 0;
         limit_output [i] = 0;
         // pwm_chnls [i] = 0;
         // dac_chnls [i] = 0;
