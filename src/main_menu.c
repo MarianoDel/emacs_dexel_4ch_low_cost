@@ -25,6 +25,10 @@ typedef enum {
     MAIN_MENU_CHANGING_CURRENT,
     MAIN_MENU_CHANGE_TEMP_PROT,
     MAIN_MENU_CHANGING_TEMP_PROT,
+    MAIN_MENU_CHANGE_CHANNELS_QTTY,
+    MAIN_MENU_CHANGING_CHANNELS_QTTY,
+    MAIN_MENU_CHANGE_MANUAL_MODE,
+    MAIN_MENU_CHANGING_MANUAL_MODE,    
     MAIN_MENU_SHOW_VERSION,
     MAIN_MENU_WAIT_SHOW_VERSION
 
@@ -82,7 +86,6 @@ resp_t Main_Menu (parameters_typedef * mem, sw_actions_t actions)
         if ((main_menu_timer) || (actions != selection_none))
             break;
 
-        Check_S2_Accel_Fast();
         SCREEN_Text2_BlankLine1();
         SCREEN_Text2_BlankLine2();
         main_menu_state++;
@@ -115,6 +118,7 @@ resp_t Main_Menu (parameters_typedef * mem, sw_actions_t actions)
         
         if (resp == resp_up)
         {
+            Check_S2_Accel_Fast();
             unsigned char * pch = &(mem->max_current_channels[0]);
             if (*pch < 255)
                 *pch += 1;
@@ -125,6 +129,7 @@ resp_t Main_Menu (parameters_typedef * mem, sw_actions_t actions)
 
         if (resp == resp_dwn)
         {
+            Check_S2_Accel_Fast();            
             unsigned char * pch = &(mem->max_current_channels[0]);
             if (*pch > 1)
                 *pch -= 1;
@@ -160,9 +165,10 @@ resp_t Main_Menu (parameters_typedef * mem, sw_actions_t actions)
 
         if (resp == resp_ok)
         {
+            Check_S2_Accel_Slow();            
             for (int i = 1; i < 4; i++)
                 mem->max_current_channels[i] = mem->max_current_channels[0];
-            
+
             resp = resp_continue;
             main_menu_state++;
         }
@@ -197,6 +203,7 @@ resp_t Main_Menu (parameters_typedef * mem, sw_actions_t actions)
         
         if (resp == resp_up)
         {
+            Check_S2_Accel_Fast();
             unsigned char * pch = &(mem->temp_prot_deg);
             if (*pch < 100)
                 *pch += 1;
@@ -207,6 +214,7 @@ resp_t Main_Menu (parameters_typedef * mem, sw_actions_t actions)
 
         if (resp == resp_dwn)
         {
+            Check_S2_Accel_Fast();            
             unsigned char * pch = &(mem->temp_prot_deg);
             if (*pch > 50)
                 *pch -= 1;
@@ -238,11 +246,167 @@ resp_t Main_Menu (parameters_typedef * mem, sw_actions_t actions)
 
         if (resp == resp_ok)
         {
+            Check_S2_Accel_Slow();            
             resp = resp_continue;
             main_menu_state++;
         }
         break;
 
+    case MAIN_MENU_CHANGE_CHANNELS_QTTY:
+
+        SCREEN_Text2_BlankLine1();
+        if (main_menu_showing)
+        {
+            sprintf(s_temp, "Ch Qtty: %d", mem->dmx_channel_quantity);
+            SCREEN_Text2_Line1(s_temp);
+        }
+        else
+            SCREEN_Text2_Line1("Ch Qtty:");
+
+        main_need_display_update = 1;
+        main_menu_state++;
+        break;
+
+    case MAIN_MENU_CHANGING_CHANNELS_QTTY:
+        
+        resp = Options_Up_Dwn_Next (actions);
+
+        if (resp != resp_continue)
+        {
+            main_need_display_update = 1;
+            main_menu_out_cnt = 20;
+            main_menu_timer = 500;
+            main_menu_showing = 1;
+        }
+        
+        if (resp == resp_up)
+        {
+            Check_S2_Accel_Fast();
+            unsigned char * pch = &(mem->dmx_channel_quantity);
+            if (*pch < 4)
+                *pch += 1;
+
+            main_menu_state--;
+            main_menu_config_change = 1;
+        }
+
+        if (resp == resp_dwn)
+        {
+            Check_S2_Accel_Fast();            
+            unsigned char * pch = &(mem->dmx_channel_quantity);
+            if (*pch > 3)
+                *pch -= 1;
+
+            main_menu_state--;            
+            main_menu_config_change = 1;
+        }
+
+        if (!main_menu_timer)
+        {
+            main_menu_timer = 500;
+            if (main_menu_showing)
+                main_menu_showing = 0;
+            else
+                main_menu_showing = 1;
+
+            main_menu_state--;
+            main_menu_out_cnt--;
+
+            if (!main_menu_out_cnt)
+            {
+                main_menu_state = MAIN_MENU_INIT;
+                Check_S2_Accel_Slow();
+
+                if (main_menu_config_change)
+                    resp = resp_need_to_save;
+            }
+        }
+
+        if (resp == resp_ok)
+        {
+            Check_S2_Accel_Slow();            
+            resp = resp_continue;
+            main_menu_state++;
+        }
+        break;
+
+    case MAIN_MENU_CHANGE_MANUAL_MODE:
+
+        SCREEN_Text2_BlankLine1();
+        if (main_menu_showing)
+        {
+            switch (mem->manual_inner_mode)
+            {
+            case 0:
+                SCREEN_Text2_Line1(" Fixed    ");
+                break;
+            case 1:
+                SCREEN_Text2_Line1(" Skipping ");
+                break;                
+            case 2:
+                SCREEN_Text2_Line1(" Fadding  ");
+                break;
+            }
+        }
+        else
+            SCREEN_Text2_Line1("Manual Mod");
+
+        main_need_display_update = 1;
+        main_menu_state++;
+        break;
+
+    case MAIN_MENU_CHANGING_MANUAL_MODE:
+        
+        resp = Options_Up_Dwn_Next (actions);
+
+        if (resp != resp_continue)
+        {
+            main_need_display_update = 1;
+            main_menu_out_cnt = 20;
+            main_menu_timer = 500;
+            main_menu_showing = 1;
+        }
+        
+        if ((resp == resp_up) ||
+            (resp == resp_dwn))
+        {
+            unsigned char * pch = &(mem->manual_inner_mode);
+            if (*pch < 2)
+                *pch += 1;
+            else
+                *pch = 0;
+
+            main_menu_state--;
+            main_menu_config_change = 1;
+        }
+
+        if (!main_menu_timer)
+        {
+            main_menu_timer = 500;
+            if (main_menu_showing)
+                main_menu_showing = 0;
+            else
+                main_menu_showing = 1;
+
+            main_menu_state--;
+            main_menu_out_cnt--;
+
+            if (!main_menu_out_cnt)
+            {
+                main_menu_state = MAIN_MENU_INIT;
+
+                if (main_menu_config_change)
+                    resp = resp_need_to_save;
+            }
+        }
+
+        if (resp == resp_ok)
+        {
+            resp = resp_continue;
+            main_menu_state++;
+        }
+        break;
+        
     case MAIN_MENU_SHOW_VERSION:
         SCREEN_Text2_BlankLine1();
         SCREEN_Text2_BlankLine2();

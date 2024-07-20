@@ -22,6 +22,7 @@
 
 // Globals -- Externals for the tested Module ----------------------------------
 sw_actions_t switch_actions = selection_none;
+volatile unsigned short adc_ch [1];
 
 
 // Globals ---------------------------------------------------------------------
@@ -50,7 +51,15 @@ gboolean Test_Main_Loop (gpointer user_data)
         mem.fixed_channels[0] = 255;
         mem.fixed_channels[1] = 255;
         mem.fixed_channels[2] = 0;
-        mem.fixed_channels[3] = 0;        
+        mem.fixed_channels[3] = 0;
+        mem.dmx_channel_quantity = 3;
+        mem.manual_inner_mode = 1;
+        mem.manual_inner_speed = 3;
+        
+        printf("-- testing with %d channels on mode: %d speed: %d\n",
+               mem.dmx_channel_quantity,
+               mem.manual_inner_mode,
+               mem.manual_inner_speed);
         timer_standby = 1300;
     }
 
@@ -78,9 +87,14 @@ gboolean Test_Main_Loop (gpointer user_data)
 
         if (resp == resp_change)
         {
-            printf("resp_change\n");
+            printf("resp_change -> update colors\n");
         }
 
+        if (resp == resp_need_to_save)
+        {
+            printf("resp_need_to_save -> update colors -> save memory!!!\n");
+        }
+        
         if (resp == resp_ok)
         {
             printf("resp_ok ended!\n");
@@ -143,78 +157,26 @@ void set_button_function (void)
     g_mutex_unlock (&mutex);
 }
 
-// // Module Implementation of SW buttons functions
-// // only two switches, answers always selection_up
-// void dwn_button_function (void)
-// {
-//     g_mutex_lock (&mutex);
-//     // switch_actions = selection_dwn;
-//     switch_actions = selection_up;    
-//     g_mutex_unlock (&mutex);
-// }
 
-// void up_button_function (void)
-// {
-//     g_mutex_lock (&mutex);
-//     switch_actions = selection_up;
-//     g_mutex_unlock (&mutex);
-// }
+// Module Mocked Functions -----------------------------------------------------
+unsigned char Manager_Probe_Temp_Get (void)
+{
+    return 1;
+}
 
-// void set_button_function (void)
-// {
-//     g_mutex_lock (&mutex);
-//     switch_actions = selection_enter;
-//     g_mutex_unlock (&mutex);
-// }
+unsigned char Temp_TempToDegreesExtended (unsigned short temp)
+{
+    return 30;
+}
 
 
-// Nedded by menues module provided by hard module
-// void UpdateSwitches (void)
-// {
-// }
-
-// resp_sw_t Check_SW_SEL (void)
-// {
-//     resp_sw_t sw = SW_NO;
-    
-//     g_mutex_lock (&mutex);
-
-//     if (switch_actions == selection_enter)
-//         sw = SW_MIN;
-    
-//     g_mutex_unlock (&mutex);
-    
-//     return sw;    
-// }
-
-// unsigned char Check_SW_DWN (void)
-// {
-//     unsigned char a = 0;
-    
-//     g_mutex_lock (&mutex);
-
-//     if (switch_actions == selection_dwn)
-//         a = 1;
-    
-//     g_mutex_unlock (&mutex);
-    
-//     return a;
-// }
+void Check_S2_Accel_Fast (void)
+{
+}
 
 
-// unsigned char Check_SW_UP (void)
-// {
-//     unsigned char a = 0;
-    
-//     g_mutex_lock (&mutex);
-
-//     if (switch_actions == selection_up)
-//         a = 1;
-    
-//     g_mutex_unlock (&mutex);
-    
-//     return a;
-// }
-
+void Check_S2_Accel_Slow (void)
+{
+}
 
 //--- end of file ---//

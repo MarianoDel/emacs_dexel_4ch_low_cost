@@ -46,7 +46,8 @@ typedef struct parameters {
 
     //-- For Max Current Channels settings ----   //10
     unsigned char max_current_channels [4];
-    unsigned char dummy2 [2];
+    unsigned char manual_inner_mode;
+    unsigned char manual_inner_speed;
     
     //-- For Temperature Protection ----    //16
     unsigned short temp_prot;    // 2 bytes if its aligned to 4

@@ -102,11 +102,19 @@ resp_t Dmx_Menu (parameters_typedef * mem, sw_actions_t actions)
                 dmx_local_data[1]);
         SCREEN_Text2_Line1(s_temp);
 
-        sprintf(s_temp, "B%3d  W%3d",
-                dmx_local_data[2],
-                dmx_local_data[3]);
+        if (mem->dmx_channel_quantity == 4)
+        {
+            sprintf(s_temp, "B%3d  W%3d",
+                    dmx_local_data[2],
+                    dmx_local_data[3]);
+        }
+        else
+        {
+            sprintf(s_temp, "B%3d",
+                    dmx_local_data[2]);
+        }
         SCREEN_Text2_Line2(s_temp);
-
+        
         dmx_need_display_update = 1;
         // resp = resp_change;    //first colors update
         dmx_state++;
@@ -185,7 +193,7 @@ resp_t Dmx_Menu (parameters_typedef * mem, sw_actions_t actions)
         {
             unsigned short * pch = &(mem->dmx_first_channel);
             // if actions selection_all_up, change fast
-            if (*pch < 512 - mem->dmx_channel_quantity)
+            if (*pch < 512 - mem->dmx_channel_quantity - 1)
                 *pch += 1;
 
             dmx_state--;

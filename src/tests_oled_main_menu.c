@@ -166,4 +166,15 @@ char * HARD_GetSoftwareVersion (void)
     return software_version;
 }
 
+
+void Check_S2_Accel_Fast (void)
+{
+}
+
+
+void Check_S2_Accel_Slow (void)
+{
+}
+
+
 //--- end of file ---//

@@ -24,18 +24,11 @@
 // Module Private Types Constants and Macros -----------------------------------
 typedef enum {
     MANUAL_MENU_INIT = 0,
-    MANUAL_MENU_SHOW_FIRST,
-    MANUAL_MENU_STANDBY,    
-    MANUAL_MENU_WAIT_CHANGE_RED,
-    MANUAL_MENU_CHANGE_RED,    
-    MANUAL_MENU_CHANGING_RED,
-    MANUAL_MENU_CHANGE_GREEN,
-    MANUAL_MENU_CHANGING_GREEN,
-    MANUAL_MENU_CHANGE_BLUE,
-    MANUAL_MENU_CHANGING_BLUE,
-    MANUAL_MENU_CHANGE_WHITE,    
-    MANUAL_MENU_CHANGING_WHITE,
-    MANUAL_MENU_SHOW_TEMP
+    MANUAL_MENU_SELECT_INNER,
+    MANUAL_MENU_WAIT_INNER,    
+    MANUAL_MENU_INNER_FADDING,
+    MANUAL_MENU_INNER_SKIPPING,    
+    MANUAL_MENU_INNER_FIXED
     
 } manual_menu_state_e;
 
@@ -52,7 +45,19 @@ manual_menu_state_e manual_state = MANUAL_MENU_INIT;
 
 
 // Module Private Functions ----------------------------------------------------
+void Manual_Menu_Inner_Reset (void);
 
+resp_t Manual_Menu_Fixed_Colors (parameters_typedef * mem,
+                                 sw_actions_t actions,
+                                 unsigned char * need_display_update);
+
+resp_t Manual_Menu_Fadding (parameters_typedef * mem,
+                            sw_actions_t actions,
+                            unsigned char * need_display_update);
+
+resp_t Manual_Menu_Skipping (parameters_typedef * mem,
+                             sw_actions_t actions,
+                             unsigned char * need_display_update);
 
 // Module Funtions -------------------------------------------------------------
 void Manual_Menu_Timeouts (void)
@@ -71,8 +76,7 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
 {
     unsigned char manual_need_display_update = 0;
     resp_t resp = resp_continue;
-    char s_temp[20];
-
+    
     switch (manual_state)
     {
     case MANUAL_MENU_INIT:
@@ -85,17 +89,110 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
         manual_state++;
         break;
 
-    case MANUAL_MENU_SHOW_FIRST:
+    case MANUAL_MENU_SELECT_INNER:
+        if (manual_menu_timer)
+            break;
+
+        SCREEN_Text2_BlankLine1();
+        SCREEN_Text2_BlankLine2();
+        
+        if (mem->manual_inner_mode == 2)
+        {
+            SCREEN_Text2_Line1(" Fadding  ");
+            SCREEN_Text2_Line2("  Colors  ");            
+        }
+        else if (mem->manual_inner_mode == 1)
+        {
+            SCREEN_Text2_Line1(" Skipping ");
+            SCREEN_Text2_Line2("  Colors  ");
+        }
+        else
+        {
+            SCREEN_Text2_Line1("  Fixed   ");
+            SCREEN_Text2_Line2("  Colors  ");
+        }
+        
+        manual_menu_timer = 800;
+        manual_need_display_update = 1;
+        manual_state++;
+        break;
+
+    case MANUAL_MENU_WAIT_INNER:
+        if (manual_menu_timer)
+            break;
+
+        if (mem->manual_inner_mode == 2)
+            manual_state = MANUAL_MENU_INNER_FADDING;
+        else if (mem->manual_inner_mode == 1)
+            manual_state = MANUAL_MENU_INNER_SKIPPING;
+        else
+            manual_state = MANUAL_MENU_INNER_FIXED;
+
+        Manual_Menu_Inner_Reset ();
+        break;
+        
+    case MANUAL_MENU_INNER_FADDING:
+        resp = Manual_Menu_Fadding (mem, actions, &manual_need_display_update);
+        
+        break;
+
+    case MANUAL_MENU_INNER_SKIPPING:
+        resp = Manual_Menu_Skipping (mem, actions, &manual_need_display_update);
+        
+        break;
+
+    case MANUAL_MENU_INNER_FIXED:
+        resp = Manual_Menu_Fixed_Colors (mem, actions, &manual_need_display_update);
+        
+        break;
+        
+    }
+
+    if (manual_need_display_update)
+        display_update();
+
+    return resp;
+    
+}
+
+
+// -- Inner Modes on Manual Menu --
+typedef enum {
+    FIXED_SHOW_FIRST = 0,
+    FIXED_STANDBY,
+    FIXED_WAIT_CHANGE_RED,
+    FIXED_CHANGE_RED,
+    FIXED_CHANGING_RED,
+    FIXED_CHANGE_GREEN,
+    FIXED_CHANGING_GREEN,
+    FIXED_CHANGE_BLUE,
+    FIXED_CHANGING_BLUE,
+    FIXED_CHANGE_WHITE,
+    FIXED_CHANGING_WHITE
+    
+} inner_state_fixed_e;
+
+
+inner_state_fixed_e inner_state = 0;
+void Manual_Menu_Inner_Reset (void)
+{
+    inner_state = 0;
+}
+
+
+resp_t Manual_Menu_Fixed_Colors (parameters_typedef * mem,
+                                 sw_actions_t actions,
+                                 unsigned char * need_display_update)
+{
+    resp_t resp = resp_continue;
+    char s_temp[20];
+
+    switch (inner_state)
+    {
+    case FIXED_SHOW_FIRST:
         if (manual_menu_timer)
             break;
         
-        // if (mem->dmx_channel_quantity >= 4)
-        // {
-        //     sprintf(s_temp, "CH1: %3d     CH4: %3d",
-        //             *((mem->fixed_channels) + 0),
-        //             *((mem->fixed_channels) + 3));
-        // }
-
         SCREEN_Text2_BlankLine1();
         SCREEN_Text2_BlankLine2();
 
@@ -104,23 +201,31 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
                 *((mem->fixed_channels) + 1));
         SCREEN_Text2_Line1(s_temp);
 
-        sprintf(s_temp, "B%3d  W%3d",
-                *((mem->fixed_channels) + 2),
-                *((mem->fixed_channels) + 3));
-        SCREEN_Text2_Line2(s_temp);
+        if (mem->dmx_channel_quantity == 4)
+        {
+            sprintf(s_temp, "B%3d  W%3d",
+                    *((mem->fixed_channels) + 2),
+                    *((mem->fixed_channels) + 3));
+        }
+        else
+        {
+            sprintf(s_temp, "B%3d",
+                    *((mem->fixed_channels) + 2));
+        }
+        SCREEN_Text2_Line2(s_temp);            
 
-        manual_need_display_update = 1;
+        *need_display_update = 1;
         resp = resp_change;    //first colors update
-        manual_state++;
+        inner_state++;
         break;
         
-    case MANUAL_MENU_STANDBY:
+    case FIXED_STANDBY:
         // for temp
         if (actions == selection_enter)
         {
             Options_Up_Dwn_Select_Reset();
             manual_menu_out_cnt = 20;
-            manual_state++;
+            inner_state++;
         }
 
         if (actions == selection_up)
@@ -137,22 +242,22 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
                 SCREEN_Text2_Line1("Temp: NC");
             
             manual_menu_timer = 1200;
-            manual_state = MANUAL_MENU_SHOW_TEMP;
+            inner_state = FIXED_SHOW_FIRST;
         }
         // end for temp
         break;
 
-    case MANUAL_MENU_WAIT_CHANGE_RED:
+    case FIXED_WAIT_CHANGE_RED:
         // wait free
         if ((actions == selection_up) ||
             (actions == selection_enter))
             break;
 
         Check_S2_Accel_Fast();
-        manual_state++;
+        inner_state++;
         break;
         
-    case MANUAL_MENU_CHANGE_RED:
+    case FIXED_CHANGE_RED:
         // wait free
         // if ((actions == selection_up) ||
         //     (actions == selection_enter))
@@ -168,17 +273,17 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
         else
             SCREEN_Text2_Line1("Red:");
 
-        manual_need_display_update = 1;
-        manual_state++;
+        *need_display_update = 1;
+        inner_state++;
         break;
 
-    case MANUAL_MENU_CHANGING_RED:
+    case FIXED_CHANGING_RED:
         
         resp = Options_Up_Dwn_Next (actions);
 
         if (resp != resp_continue)
         {
-            manual_need_display_update = 1;
+            *need_display_update = 1;
             manual_menu_out_cnt = 20;
             manual_menu_timer = 500;
             manual_menu_showing = 1;
@@ -193,7 +298,7 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
 
             // // force high velocity update
             // Options_Up_Dwn_Next (selection_none);
-            manual_state--;
+            inner_state--;
             resp = resp_need_to_save;
         }
 
@@ -204,7 +309,7 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
             if (*pch > 0)
                 *pch -= 1;
 
-            manual_state--;            
+            inner_state--;            
             resp = resp_need_to_save;
         }
 
@@ -216,24 +321,24 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
             else
                 manual_menu_showing = 1;
 
-            manual_state--;
+            inner_state--;
             manual_menu_out_cnt--;
 
             if (!manual_menu_out_cnt)
             {
                 Check_S2_Accel_Slow();
-                manual_state = MANUAL_MENU_SHOW_FIRST;                
+                inner_state = FIXED_SHOW_FIRST;                
             }
         }
 
         if (resp == resp_ok)
         {
-            manual_state++;
+            inner_state++;
             resp = resp_continue;
         }
         break;
         
-    case MANUAL_MENU_CHANGE_GREEN:
+    case FIXED_CHANGE_GREEN:
 
         SCREEN_Text2_BlankLine1();
         if (manual_menu_showing)
@@ -245,17 +350,17 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
         else
             SCREEN_Text2_Line1("Green:");
 
-        manual_need_display_update = 1;
-        manual_state++;
+        *need_display_update = 1;
+        inner_state++;
         break;
 
-    case MANUAL_MENU_CHANGING_GREEN:
+    case FIXED_CHANGING_GREEN:
 
         resp = Options_Up_Dwn_Next (actions);
 
         if (resp != resp_continue)
         {
-            manual_need_display_update = 1;
+            *need_display_update = 1;
             manual_menu_out_cnt = 20;
             manual_menu_timer = 500;
             manual_menu_showing = 1;
@@ -268,7 +373,7 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
             if (*pch < 255)
                 *pch += 1;
 
-            manual_state--;
+            inner_state--;
             resp = resp_need_to_save;
         }
 
@@ -279,7 +384,7 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
             if (*pch > 0)
                 *pch -= 1;
             
-            manual_state--;
+            inner_state--;
             resp = resp_need_to_save;
         }
 
@@ -291,24 +396,24 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
             else
                 manual_menu_showing = 1;
 
-            manual_state--;
+            inner_state--;
             manual_menu_out_cnt--;
 
             if (!manual_menu_out_cnt)
             {
                 Check_S2_Accel_Slow();
-                manual_state = MANUAL_MENU_SHOW_FIRST;                
+                inner_state = FIXED_SHOW_FIRST;                
             }
         }
 
         if (resp == resp_ok)
         {
-            manual_state++;
+            inner_state++;
             resp = resp_continue;
         }
         break;
 
-    case MANUAL_MENU_CHANGE_BLUE:
+    case FIXED_CHANGE_BLUE:
 
         SCREEN_Text2_BlankLine1();
         if (manual_menu_showing)
@@ -320,17 +425,17 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
         else
             SCREEN_Text2_Line1("Blue:");
 
-        manual_need_display_update = 1;
-        manual_state++;
+        *need_display_update = 1;
+        inner_state++;
         break;
 
-    case MANUAL_MENU_CHANGING_BLUE:
+    case FIXED_CHANGING_BLUE:
 
         resp = Options_Up_Dwn_Next (actions);
 
         if (resp != resp_continue)
         {
-            manual_need_display_update = 1;
+            *need_display_update = 1;
             manual_menu_out_cnt = 20;
             manual_menu_timer = 500;
             manual_menu_showing = 1;
@@ -343,7 +448,7 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
             if (*pch < 255)
                 *pch += 1;
 
-            manual_state--;
+            inner_state--;
             resp = resp_need_to_save;
         }
 
@@ -354,7 +459,7 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
             if (*pch > 0)
                 *pch -= 1;
             
-            manual_state--;
+            inner_state--;
             resp = resp_need_to_save;
         }
 
@@ -366,24 +471,32 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
             else
                 manual_menu_showing = 1;
 
-            manual_state--;
+            inner_state--;
             manual_menu_out_cnt--;
 
             if (!manual_menu_out_cnt)
             {
                 Check_S2_Accel_Slow();
-                manual_state = MANUAL_MENU_SHOW_FIRST;                
+                inner_state = FIXED_SHOW_FIRST;                
             }
         }
 
         if (resp == resp_ok)
         {
-            manual_state++;
-            resp = resp_continue;
+            if (mem->dmx_channel_quantity == 4)
+            {
+                inner_state++;
+                resp = resp_continue;
+            }
+            else
+            {
+                Check_S2_Accel_Slow();
+                inner_state = FIXED_SHOW_FIRST;
+            }
         }
         break;
 
-    case MANUAL_MENU_CHANGE_WHITE:
+    case FIXED_CHANGE_WHITE:
 
         SCREEN_Text2_BlankLine1();
         if (manual_menu_showing)
@@ -395,17 +508,17 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
         else
             SCREEN_Text2_Line1("White:");
 
-        manual_need_display_update = 1;
-        manual_state++;
+        *need_display_update = 1;
+        inner_state++;
         break;
 
-    case MANUAL_MENU_CHANGING_WHITE:
+    case FIXED_CHANGING_WHITE:
 
         resp = Options_Up_Dwn_Next (actions);
 
         if (resp != resp_continue)
         {
-            manual_need_display_update = 1;
+            *need_display_update = 1;
             manual_menu_out_cnt = 20;
             manual_menu_timer = 500;
             manual_menu_showing = 1;
@@ -418,7 +531,7 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
             if (*pch < 255)
                 *pch += 1;
 
-            manual_state--;
+            inner_state--;
             resp = resp_need_to_save;
         }
 
@@ -429,7 +542,7 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
             if (*pch > 0)
                 *pch -= 1;
             
-            manual_state--;
+            inner_state--;
             resp = resp_need_to_save;
         }
 
@@ -441,36 +554,347 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
             else
                 manual_menu_showing = 1;
 
-            manual_state--;
+            inner_state--;
             manual_menu_out_cnt--;
 
             if (!manual_menu_out_cnt)
             {
                 Check_S2_Accel_Slow();
-                manual_state = MANUAL_MENU_SHOW_FIRST;
+                inner_state = FIXED_SHOW_FIRST;
             }
         }
 
         if (resp == resp_ok)
         {
             Check_S2_Accel_Slow();
-            manual_state = MANUAL_MENU_SHOW_FIRST;
+            inner_state = FIXED_SHOW_FIRST;
         }
         break;
 
-    case MANUAL_MENU_SHOW_TEMP:
-        if (!manual_menu_timer)
-            manual_state = MANUAL_MENU_SHOW_FIRST;
-        
+    default:
+        inner_state = FIXED_SHOW_FIRST;
+        resp = resp_continue;
         break;
+        
     }
-
-    if (manual_need_display_update)
-        display_update();
-
-    return resp;
     
+    return resp;
 }
 
+
+typedef enum {
+    FADDING_SHOW_FIRST = 0,
+    FADDING_STANDBY,
+    FADDING_WAIT_CHANGE_SPEED,
+    FADDING_CHANGE_SPEED,
+    FADDING_CHANGING_SPEED
+    
+} inner_state_fadding_e;
+
+resp_t Manual_Menu_Fadding (parameters_typedef * mem,
+                            sw_actions_t actions,
+                            unsigned char * need_display_update)
+{
+    resp_t resp = resp_continue;
+    char s_temp[20];
+
+    switch (inner_state)
+    {
+    case FADDING_SHOW_FIRST:
+        if (manual_menu_timer)
+            break;
+        
+        SCREEN_Text2_BlankLine1();
+        SCREEN_Text2_BlankLine2();
+
+        SCREEN_Text2_Line1("Fadding   ");
+        
+        sprintf(s_temp, "Speed: %d", mem->manual_inner_speed);
+        SCREEN_Text2_Line2(s_temp);            
+
+        *need_display_update = 1;
+        resp = resp_change;    //first colors update
+        inner_state++;
+        break;
+        
+    case FADDING_STANDBY:
+        // for temp
+        if (actions == selection_enter)
+        {
+            Options_Up_Dwn_Select_Reset();
+            manual_menu_out_cnt = 20;
+            inner_state++;
+        }
+
+        if (actions == selection_up)
+        {
+            char s_temp [20];
+            SCREEN_Text2_BlankLine1();
+            SCREEN_Text2_BlankLine2();
+            if (Manager_Probe_Temp_Get())
+            {
+                sprintf(s_temp, "Temp: %dC", Temp_TempToDegreesExtended (Temp_Channel));
+                SCREEN_Text2_Line1(s_temp);
+            }
+            else
+                SCREEN_Text2_Line1("Temp: NC");
+            
+            manual_menu_timer = 1200;
+            inner_state = FADDING_SHOW_FIRST;
+        }
+        // end for temp
+        break;
+
+    case FADDING_WAIT_CHANGE_SPEED:
+        // wait free
+        if ((actions == selection_up) ||
+            (actions == selection_enter))
+            break;
+
+        // Check_S2_Accel_Fast();
+        inner_state++;
+        break;
+        
+    case FADDING_CHANGE_SPEED:
+        SCREEN_Text2_BlankLine1();
+        if (manual_menu_showing)
+        {
+            sprintf(s_temp, "Speed: %d", mem->manual_inner_speed);
+            SCREEN_Text2_Line1(s_temp);            
+        }
+        else
+            SCREEN_Text2_Line1("Speed:");
+
+        *need_display_update = 1;
+        inner_state++;
+        break;
+
+    case FADDING_CHANGING_SPEED:
+        
+        resp = Options_Up_Dwn_Next (actions);
+
+        if (resp != resp_continue)
+        {
+            *need_display_update = 1;
+            manual_menu_out_cnt = 20;
+            manual_menu_timer = 500;
+            manual_menu_showing = 1;
+        }
+        
+        if (resp == resp_up)
+        {
+            unsigned char * pch = &(mem->manual_inner_speed);
+            // if actions selection_all_up, change fast
+            if (*pch < 9)
+                *pch += 1;
+
+            // // force high velocity update
+            // Options_Up_Dwn_Next (selection_none);
+            inner_state--;
+            resp = resp_need_to_save;
+        }
+
+        if (resp == resp_dwn)
+        {
+            unsigned char * pch = &(mem->manual_inner_speed);
+            // if actions selection_all_up, change fast
+            if (*pch > 0)
+                *pch -= 1;
+
+            inner_state--;            
+            resp = resp_need_to_save;
+        }
+
+        if (!manual_menu_timer)
+        {
+            manual_menu_timer = 500;
+            if (manual_menu_showing)
+                manual_menu_showing = 0;
+            else
+                manual_menu_showing = 1;
+
+            inner_state--;
+            manual_menu_out_cnt--;
+
+            if (!manual_menu_out_cnt)
+            {
+                // Check_S2_Accel_Slow();
+                inner_state = FADDING_SHOW_FIRST;
+            }
+        }
+
+        if (resp == resp_ok)
+        {
+            inner_state = FADDING_SHOW_FIRST;
+            resp = resp_continue;
+        }
+        break;
+
+    default:
+        inner_state = FADDING_SHOW_FIRST;
+        resp = resp_continue;
+        break;
+    }
+    
+    return resp;
+}
+
+
+typedef enum {
+    SKIPPING_SHOW_FIRST = 0,
+    SKIPPING_STANDBY,
+    SKIPPING_WAIT_CHANGE_SPEED,
+    SKIPPING_CHANGE_SPEED,
+    SKIPPING_CHANGING_SPEED
+    
+} inner_state_skipping_e;
+
+resp_t Manual_Menu_Skipping (parameters_typedef * mem,
+                             sw_actions_t actions,
+                             unsigned char * need_display_update)
+{
+    resp_t resp = resp_continue;
+    char s_temp[20];
+
+    switch (inner_state)
+    {
+    case SKIPPING_SHOW_FIRST:
+        if (manual_menu_timer)
+            break;
+        
+        SCREEN_Text2_BlankLine1();
+        SCREEN_Text2_BlankLine2();
+
+        SCREEN_Text2_Line1("Skipping  ");
+        
+        sprintf(s_temp, "Speed: %d", mem->manual_inner_speed);
+        SCREEN_Text2_Line2(s_temp);            
+
+        *need_display_update = 1;
+        resp = resp_change;    //first colors update
+        inner_state++;
+        break;
+        
+    case SKIPPING_STANDBY:
+        // for temp
+        if (actions == selection_enter)
+        {
+            Options_Up_Dwn_Select_Reset();
+            manual_menu_out_cnt = 20;
+            inner_state++;
+        }
+
+        if (actions == selection_up)
+        {
+            char s_temp [20];
+            SCREEN_Text2_BlankLine1();
+            SCREEN_Text2_BlankLine2();
+            if (Manager_Probe_Temp_Get())
+            {
+                sprintf(s_temp, "Temp: %dC", Temp_TempToDegreesExtended (Temp_Channel));
+                SCREEN_Text2_Line1(s_temp);
+            }
+            else
+                SCREEN_Text2_Line1("Temp: NC");
+            
+            manual_menu_timer = 1200;
+            inner_state = SKIPPING_SHOW_FIRST;
+        }
+        // end for temp
+        break;
+
+    case SKIPPING_WAIT_CHANGE_SPEED:
+        // wait free
+        if ((actions == selection_up) ||
+            (actions == selection_enter))
+            break;
+
+        // Check_S2_Accel_Fast();
+        inner_state++;
+        break;
+        
+    case SKIPPING_CHANGE_SPEED:
+        SCREEN_Text2_BlankLine1();
+        if (manual_menu_showing)
+        {
+            sprintf(s_temp, "Speed: %d", mem->manual_inner_speed);
+            SCREEN_Text2_Line1(s_temp);            
+        }
+        else
+            SCREEN_Text2_Line1("Speed:");
+
+        *need_display_update = 1;
+        inner_state++;
+        break;
+
+    case SKIPPING_CHANGING_SPEED:
+        
+        resp = Options_Up_Dwn_Next (actions);
+
+        if (resp != resp_continue)
+        {
+            *need_display_update = 1;
+            manual_menu_out_cnt = 20;
+            manual_menu_timer = 500;
+            manual_menu_showing = 1;
+        }
+        
+        if (resp == resp_up)
+        {
+            unsigned char * pch = &(mem->manual_inner_speed);
+            // if actions selection_all_up, change fast
+            if (*pch < 9)
+                *pch += 1;
+
+            // // force high velocity update
+            // Options_Up_Dwn_Next (selection_none);
+            inner_state--;
+            resp = resp_need_to_save;
+        }
+
+        if (resp == resp_dwn)
+        {
+            unsigned char * pch = &(mem->manual_inner_speed);
+            // if actions selection_all_up, change fast
+            if (*pch > 0)
+                *pch -= 1;
+
+            inner_state--;            
+            resp = resp_need_to_save;
+        }
+
+        if (!manual_menu_timer)
+        {
+            manual_menu_timer = 500;
+            if (manual_menu_showing)
+                manual_menu_showing = 0;
+            else
+                manual_menu_showing = 1;
+
+            inner_state--;
+            manual_menu_out_cnt--;
+
+            if (!manual_menu_out_cnt)
+            {
+                // Check_S2_Accel_Slow();
+                inner_state = SKIPPING_SHOW_FIRST;
+            }
+        }
+
+        if (resp == resp_ok)
+        {
+            inner_state = SKIPPING_SHOW_FIRST;
+            resp = resp_continue;
+        }
+        break;
+
+    default:
+        inner_state = SKIPPING_SHOW_FIRST;
+        resp = resp_continue;
+        break;
+    }
+    
+    return resp;    
+}
 
 //--- end of file ---//
