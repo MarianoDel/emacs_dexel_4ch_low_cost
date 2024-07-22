@@ -344,7 +344,7 @@ resp_t Main_Menu (parameters_typedef * mem, sw_actions_t actions)
                 SCREEN_Text2_Line1(" Skipping ");
                 break;                
             case 2:
-                SCREEN_Text2_Line1(" Fadding  ");
+                SCREEN_Text2_Line1(" Fading   ");
                 break;
             }
         }

@@ -15,6 +15,7 @@
 #include "adc.h"
 #include "temperatures.h"
 #include "hard.h"
+#include "manager.h"
 
 #include <string.h>
 #include <stdio.h>

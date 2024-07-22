@@ -99,6 +99,7 @@ SRC += ./src/manual_menu.c
 SRC += ./src/filters_and_offsets.c
 SRC += ./src/pwm.c
 SRC += ./src/comms_power.c
+SRC += ./src/colors_functions.c
 
 SRC += ./src/dsp.c
 
@@ -302,6 +303,7 @@ tests_oled_menu_options:
 tests_oled_manual_menu:
 	# first compile common modules (modules to test and dependencies)
 	gcc -c src/manual_menu.c -I. $(INCDIR)
+	gcc -c src/colors_functions.c -I. $(INCDIR)
 	gcc -c src/menu_options_oled.c -I. $(INCDIR)
 	gcc -c src/screen.c -I. $(INCDIR)
 	gcc -c src/ssd1306_display.c -I. $(INCDIR)
@@ -311,7 +313,7 @@ tests_oled_manual_menu:
 	# then the gtk lib modules
 	gcc -c `pkg-config --cflags gtk+-3.0` src/tests_glade_oled.c -o tests_glade_oled.o
 	# link everything
-	gcc tests_glade_oled.o tests_oled_manual_menu.o manual_menu.o menu_options_oled.o screen.o ssd1306_display.o ssd1306_gfx.o `pkg-config --libs gtk+-3.0` -o tests_gtk
+	gcc tests_glade_oled.o tests_oled_manual_menu.o manual_menu.o colors_functions.o menu_options_oled.o screen.o ssd1306_display.o ssd1306_gfx.o `pkg-config --libs gtk+-3.0` -o tests_gtk
 	# run global tags
 	gtags -q
 	# run the simulation

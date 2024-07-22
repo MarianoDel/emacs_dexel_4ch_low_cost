@@ -389,20 +389,13 @@ void TF_Temp_Channel (void)
     while (1)
     {
         Wait_ms (500);
-        // LCD_ClearScreen ();
         
-        temp_degrees = Temp_TempToDegrees(Temp_Channel);
+        temp_degrees = Temp_TempToDegreesExtended(Temp_Channel);
         
         sprintf(s_lcd, "Ch: %04d T: %d",
                 Temp_Channel,
                 temp_degrees);
 
-        // LCD_Writel1(s_lcd);
-
-        sprintf(s_lcd, "convert: %04d",
-                Temp_DegreesToTemp(temp_degrees));
-
-        // LCD_Writel2(s_lcd);
     }
 }
 
