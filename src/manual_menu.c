@@ -45,7 +45,9 @@ volatile unsigned short manual_menu_timer = 0;
 volatile unsigned short manual_effect_timer = 0;
 unsigned char manual_menu_showing = 0;
 unsigned char manual_menu_out_cnt = 0;
+unsigned char manual_menu_last_inner_mode = 0;
 manual_menu_state_e manual_state = MANUAL_MENU_INIT;
+
 
 
 // Module Private Functions ----------------------------------------------------
@@ -140,17 +142,29 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
         
     case MANUAL_MENU_INNER_FADING:
         resp = Manual_Menu_Fading (mem, actions, &manual_need_display_update);
+
+        // change in mode        
+        if (resp == resp_ok)
+            manual_state = MANUAL_MENU_INIT;
         
         break;
 
     case MANUAL_MENU_INNER_SKIPPING:
         resp = Manual_Menu_Skipping (mem, actions, &manual_need_display_update);
+
+        // change in mode        
+        if (resp == resp_ok)
+            manual_state = MANUAL_MENU_INIT;
         
         break;
 
     case MANUAL_MENU_INNER_FIXED:
         resp = Manual_Menu_Fixed_Colors (mem, actions, &manual_need_display_update);
-        
+
+        // change in mode        
+        if (resp == resp_ok)
+            manual_state = MANUAL_MENU_INIT;
+
         break;
         
     }
@@ -175,7 +189,9 @@ typedef enum {
     FIXED_CHANGE_BLUE,
     FIXED_CHANGING_BLUE,
     FIXED_CHANGE_WHITE,
-    FIXED_CHANGING_WHITE
+    FIXED_CHANGING_WHITE,
+    FIXED_CHANGE_MODE,
+    FIXED_CHANGING_MODE
     
 } inner_state_fixed_e;
 
@@ -491,15 +507,16 @@ resp_t Manual_Menu_Fixed_Colors (parameters_typedef * mem,
         if (resp == resp_ok)
         {
             if (mem->dmx_channel_quantity == 4)
-            {
                 inner_state++;
-                resp = resp_continue;
-            }
             else
             {
                 Check_S2_Accel_Slow();
-                inner_state = FIXED_SHOW_FIRST;
+                inner_state = FIXED_CHANGE_MODE;
+
+                // save actual inner mode
+                manual_menu_last_inner_mode = mem->manual_inner_mode;
             }
+            resp = resp_continue;            
         }
         break;
 
@@ -574,9 +591,96 @@ resp_t Manual_Menu_Fixed_Colors (parameters_typedef * mem,
         if (resp == resp_ok)
         {
             Check_S2_Accel_Slow();
-            inner_state = FIXED_SHOW_FIRST;
+            inner_state++;
+            resp = resp_continue;
+
+            // save actual inner mode
+            manual_menu_last_inner_mode = mem->manual_inner_mode;
         }
         break;
+
+    case FIXED_CHANGE_MODE:
+
+        SCREEN_Text2_BlankLine1();
+        if (manual_menu_showing)
+        {
+            switch (mem->manual_inner_mode)
+            {
+            case 0:
+                SCREEN_Text2_Line1("Fixed");
+                break;
+            case 1:
+                SCREEN_Text2_Line1("Skipping");
+                break;                
+            case 2:
+                SCREEN_Text2_Line1("Fading");
+                break;
+            }
+        }
+        else
+            // SCREEN_Text2_Line1("Manual Mod");
+            SCREEN_Text2_Line1("    Colors");        
+
+        *need_display_update = 1;
+        inner_state++;
+        break;
+
+    case FIXED_CHANGING_MODE:
+        
+        resp = Options_Up_Dwn_Out (actions);
+
+        if (resp != resp_continue)
+        {
+            *need_display_update = 1;
+            manual_menu_out_cnt = 20;
+            manual_menu_timer = 500;
+            manual_menu_showing = 1;
+        }
+        
+        if ((resp == resp_up) ||
+            (resp == resp_dwn))
+        {
+            unsigned char * pch = &(mem->manual_inner_mode);
+            if (*pch < 2)
+                *pch += 1;
+            else
+                *pch = 0;
+
+            inner_state--;
+            resp = resp_need_to_save;
+        }
+
+        if (!manual_menu_timer)
+        {
+            manual_menu_timer = 500;
+            if (manual_menu_showing)
+                manual_menu_showing = 0;
+            else
+                manual_menu_showing = 1;
+
+            inner_state--;
+            manual_menu_out_cnt--;
+
+            if (!manual_menu_out_cnt)
+            {
+                Check_S2_Accel_Slow();
+                inner_state = FIXED_SHOW_FIRST;
+                if (manual_menu_last_inner_mode != mem->manual_inner_mode)
+                    resp = resp_ok;
+
+                break;
+            }
+        }
+
+        if (resp == resp_ok)
+        {
+            inner_state = FIXED_SHOW_FIRST;
+            if (manual_menu_last_inner_mode != mem->manual_inner_mode)
+                resp = resp_ok;
+            else
+                resp = resp_continue;
+        }
+        break;        
 
     default:
         inner_state = FIXED_SHOW_FIRST;
@@ -594,7 +698,9 @@ typedef enum {
     FADING_STANDBY,
     FADING_WAIT_CHANGE_SPEED,
     FADING_CHANGE_SPEED,
-    FADING_CHANGING_SPEED
+    FADING_CHANGING_SPEED,
+    FADING_CHANGE_MODE,
+    FADING_CHANGING_MODE
     
 } inner_state_fading_e;
 
@@ -650,13 +756,6 @@ resp_t Manual_Menu_Fading (parameters_typedef * mem,
             inner_state = FADING_SHOW_FIRST;
         }
         // end for temp
-
-        if (!manual_effect_timer)
-        {
-            resp = Colors_Fading_Shuffle_Pallete (mem->fixed_channels);
-            manual_effect_timer = 10 - mem->manual_inner_speed;
-            resp = resp_change;
-        }        
         break;
 
     case FADING_WAIT_CHANGE_SPEED:
@@ -739,15 +838,112 @@ resp_t Manual_Menu_Fading (parameters_typedef * mem,
 
         if (resp == resp_ok)
         {
-            inner_state = FADING_SHOW_FIRST;
+            inner_state++;
             resp = resp_continue;
+
+            // save actual inner mode
+            manual_menu_last_inner_mode = mem->manual_inner_mode;
         }
         break;
 
+    case FADING_CHANGE_MODE:
+
+        SCREEN_Text2_BlankLine1();
+        if (manual_menu_showing)
+        {
+            switch (mem->manual_inner_mode)
+            {
+            case 0:
+                SCREEN_Text2_Line1("Fixed");
+                break;
+            case 1:
+                SCREEN_Text2_Line1("Skipping");
+                break;                
+            case 2:
+                SCREEN_Text2_Line1("Fading");
+                break;
+            }
+        }
+        else
+            // SCREEN_Text2_Line1("Manual Mod");
+            SCREEN_Text2_Line1("    Colors");        
+
+        *need_display_update = 1;
+        inner_state++;
+        break;
+
+    case FADING_CHANGING_MODE:
+        
+        resp = Options_Up_Dwn_Out (actions);
+
+        if (resp != resp_continue)
+        {
+            *need_display_update = 1;
+            manual_menu_out_cnt = 20;
+            manual_menu_timer = 500;
+            manual_menu_showing = 1;
+        }
+        
+        if ((resp == resp_up) ||
+            (resp == resp_dwn))
+        {
+            unsigned char * pch = &(mem->manual_inner_mode);
+            if (*pch < 2)
+                *pch += 1;
+            else
+                *pch = 0;
+
+            inner_state--;
+            resp = resp_need_to_save;
+        }
+
+        if (!manual_menu_timer)
+        {
+            manual_menu_timer = 500;
+            if (manual_menu_showing)
+                manual_menu_showing = 0;
+            else
+                manual_menu_showing = 1;
+
+            inner_state--;
+            manual_menu_out_cnt--;
+
+            if (!manual_menu_out_cnt)
+            {
+                // Check_S2_Accel_Slow();
+                inner_state = FADING_SHOW_FIRST;
+                if (manual_menu_last_inner_mode != mem->manual_inner_mode)
+                    resp = resp_ok;
+
+                break;
+            }
+        }
+
+        if (resp == resp_ok)
+        {
+            inner_state = FADING_SHOW_FIRST;
+            if (manual_menu_last_inner_mode != mem->manual_inner_mode)
+                resp = resp_ok;
+            else
+                resp = resp_continue;
+        }
+        break;        
+        
     default:
         inner_state = FADING_SHOW_FIRST;
         resp = resp_continue;
         break;
+    }
+
+    // always do the effect, if we are not doing anything else
+    if (resp == resp_continue)
+    {
+        if (!manual_effect_timer)
+        {
+            resp = Colors_Fading_Shuffle_Pallete (mem->fixed_channels);
+            manual_effect_timer = 10 - mem->manual_inner_speed;
+            resp = resp_change;
+        }
     }
     
     return resp;
@@ -759,7 +955,9 @@ typedef enum {
     SKIPPING_STANDBY,
     SKIPPING_WAIT_CHANGE_SPEED,
     SKIPPING_CHANGE_SPEED,
-    SKIPPING_CHANGING_SPEED
+    SKIPPING_CHANGING_SPEED,
+    SKIPPING_CHANGE_MODE,
+    SKIPPING_CHANGING_MODE
     
 } inner_state_skipping_e;
 
@@ -815,13 +1013,6 @@ resp_t Manual_Menu_Skipping (parameters_typedef * mem,
             inner_state = SKIPPING_SHOW_FIRST;
         }
         // end for temp
-
-        if (!manual_effect_timer)
-        {
-            resp = Colors_Strobe_Pallete (mem->fixed_channels);
-            manual_effect_timer = 1000 - mem->manual_inner_speed * 100;
-            resp = resp_change;
-        }                
         break;
 
     case SKIPPING_WAIT_CHANGE_SPEED:
@@ -904,15 +1095,112 @@ resp_t Manual_Menu_Skipping (parameters_typedef * mem,
 
         if (resp == resp_ok)
         {
-            inner_state = SKIPPING_SHOW_FIRST;
+            inner_state++;
             resp = resp_continue;
+
+            // save actual inner mode
+            manual_menu_last_inner_mode = mem->manual_inner_mode;            
         }
         break;
+
+    case SKIPPING_CHANGE_MODE:
+
+        SCREEN_Text2_BlankLine1();
+        if (manual_menu_showing)
+        {
+            switch (mem->manual_inner_mode)
+            {
+            case 0:
+                SCREEN_Text2_Line1("Fixed");
+                break;
+            case 1:
+                SCREEN_Text2_Line1("Skipping");
+                break;                
+            case 2:
+                SCREEN_Text2_Line1("Fading");
+                break;
+            }
+        }
+        else
+            // SCREEN_Text2_Line1("Manual Mod");
+            SCREEN_Text2_Line1("    Colors");        
+
+        *need_display_update = 1;
+        inner_state++;
+        break;
+
+    case SKIPPING_CHANGING_MODE:
+        
+        resp = Options_Up_Dwn_Out (actions);
+
+        if (resp != resp_continue)
+        {
+            *need_display_update = 1;
+            manual_menu_out_cnt = 20;
+            manual_menu_timer = 500;
+            manual_menu_showing = 1;
+        }
+        
+        if ((resp == resp_up) ||
+            (resp == resp_dwn))
+        {
+            unsigned char * pch = &(mem->manual_inner_mode);
+            if (*pch < 2)
+                *pch += 1;
+            else
+                *pch = 0;
+
+            inner_state--;
+            resp = resp_need_to_save;
+        }
+
+        if (!manual_menu_timer)
+        {
+            manual_menu_timer = 500;
+            if (manual_menu_showing)
+                manual_menu_showing = 0;
+            else
+                manual_menu_showing = 1;
+
+            inner_state--;
+            manual_menu_out_cnt--;
+
+            if (!manual_menu_out_cnt)
+            {
+                // Check_S2_Accel_Slow();
+                inner_state = SKIPPING_SHOW_FIRST;
+                if (manual_menu_last_inner_mode != mem->manual_inner_mode)
+                    resp = resp_ok;
+
+                break;
+            }
+        }
+
+        if (resp == resp_ok)
+        {
+            inner_state = SKIPPING_SHOW_FIRST;
+            if (manual_menu_last_inner_mode != mem->manual_inner_mode)
+                resp = resp_ok;
+            else
+                resp = resp_continue;
+        }
+        break;        
 
     default:
         inner_state = SKIPPING_SHOW_FIRST;
         resp = resp_continue;
         break;
+    }
+
+    // always showing if no other changes needed
+    if (resp == resp_continue)
+    {
+        if (!manual_effect_timer)
+        {
+            resp = Colors_Strobe_Pallete (mem->fixed_channels);
+            manual_effect_timer = 1000 - mem->manual_inner_speed * 100;
+            resp = resp_change;
+        }                
     }
     
     return resp;    

@@ -52,8 +52,8 @@ void Option_Selected_To_Box (unsigned char option,
                              unsigned char * line_x,
                              unsigned char * line_y,
                              unsigned char * line_w);
-void Option_Selected_Pretty (unsigned char enable, unsigned char selection, char * s);
 
+void Option_Selected_Pretty (unsigned char enable, unsigned char selection, char * s);
 
 // Module Functions ------------------------------------------------------------
 void Options_Up_Dwn_Select_Reset (void)
@@ -62,7 +62,7 @@ void Options_Up_Dwn_Select_Reset (void)
 }
 
 
-resp_t Options_Up_Dwn_Select (sw_actions_t actions)
+resp_t Options_Up_Dwn_Select_Out (sw_actions_t actions, unsigned char out)
 {
     resp_t ans = resp_continue;
 
@@ -70,147 +70,81 @@ resp_t Options_Up_Dwn_Select (sw_actions_t actions)
     {
     case options_init:
         SCREEN_Text2_BlankLine2();
-	SCREEN_Text2_Line2 ("UP DWN OUT");	
-        Option_Selected_Pretty (1, 0, "UP");
-        
-	options++;
-	break;
-
-    case options_changing_up:
-	if (actions == selection_enter)
-	{
-	    ans = resp_up;
-	    options_last = options;
-	    options = options_wait_free;
-	}
-
-	if (actions == selection_up)
-	{
-	    ans = resp_change;
-	    options_last = options_changing_dwn;
-	    options = options_wait_free;
-
-            SCREEN_Text2_BlankLine2();
-            SCREEN_Text2_Line2 ("UP DWN OUT");	
-            Option_Selected_Pretty (1, 1, "DWN");
-            
-	}
-	break;
-
-    case options_changing_dwn:
-	if (actions == selection_enter)
-	{
-	    ans = resp_dwn;
-	    options_last = options;
-	    options = options_wait_free;
-	}
-
-	if (actions == selection_up)
-	{
-	    ans = resp_change;
-	    options_last = options_select;
-	    options = options_wait_free;
-
-            SCREEN_Text2_BlankLine2();
-            SCREEN_Text2_Line2 ("UP DWN OUT");	
-            Option_Selected_Pretty (1, 2, "OUT");
-	}
-	break;
-
-    case options_select:
-	if (actions == selection_enter)
-	{
-	    options_last = options_done;
-	    options = options_wait_free;
-	}
-
-	if (actions == selection_up)
-	{
-	    ans = resp_change;
-	    options_last = options_changing_up;
-	    options = options_wait_free;
-
-            SCREEN_Text2_BlankLine2();
-            SCREEN_Text2_Line2 ("UP DWN OUT");	
-            Option_Selected_Pretty (1, 0, "UP");            
-	}	
-	break;
-
-    case options_wait_free:
-	if (actions == selection_none)
-	{
-	    if (options_last == options_done)
-	    {
-		options = options_init;
-		ans = resp_ok;
-	    }
-	    else
-		options = options_last;
-	}
-	break;
-
-    default:
-	options = options_init;
-	break;
-
-    }
-    
-    return ans;
-}
-
-
-resp_t Options_Up_Dwn_Next (sw_actions_t actions)
-{
-    resp_t ans = resp_continue;
-
-    switch (options)
-    {
-    case options_init:
-        SCREEN_Text2_BlankLine2();
-	SCREEN_Text2_Line2 ("UP DWN NXT");	
-        Option_Selected_Pretty (1, 2, "NXT");
-        
-	options = options_select;
-	break;
-
-    case options_changing_up:
-	if (actions == selection_enter)
-	{
-	    ans = resp_up;
-	    options_last = options;
-	    options = options_wait_free;
-	}
-
-	if (actions == selection_up)
-	{
-	    ans = resp_change;
-	    options_last = options_changing_dwn;
-	    options = options_wait_free;
-
-            SCREEN_Text2_BlankLine2();
-            SCREEN_Text2_Line2 ("UP DWN NXT");	
-            Option_Selected_Pretty (1, 1, "DWN");
-            
-	}
-	break;
-
-    case options_changing_dwn:
-	if (actions == selection_enter)
-	{
-	    ans = resp_dwn;
-	    options_last = options;
-	    options = options_wait_free;
-	}
-
-	if (actions == selection_up)
-	{
-	    ans = resp_change;
-	    options_last = options_select;
-	    options = options_wait_free;
-
-            SCREEN_Text2_BlankLine2();
+        if (out == 2)
+        {
             SCREEN_Text2_Line2 ("UP DWN NXT");	
             Option_Selected_Pretty (1, 2, "NXT");
+            options = options_select;
+        }
+        else if (out == 1)
+        {
+            SCREEN_Text2_Line2 ("UP DWN OUT");
+            Option_Selected_Pretty (1, 2, "OUT");
+            options = options_select;
+        }
+        else
+        {
+            SCREEN_Text2_Line2 ("UP DWN OUT");
+            Option_Selected_Pretty (1, 0, "UP");
+            options++;            
+        }
+	break;
+
+    case options_changing_up:
+	if (actions == selection_enter)
+	{
+	    ans = resp_up;
+	    options_last = options;
+	    options = options_wait_free;
+	}
+
+	if (actions == selection_up)
+	{
+	    ans = resp_change;
+	    options_last = options_changing_dwn;
+	    options = options_wait_free;
+
+            SCREEN_Text2_BlankLine2();
+
+            if (out == 2)
+            {
+                SCREEN_Text2_Line2 ("UP DWN NXT");	
+                Option_Selected_Pretty (1, 1, "DWN");
+            }
+            else
+            {
+                SCREEN_Text2_Line2 ("UP DWN OUT");	
+                Option_Selected_Pretty (1, 1, "DWN");
+            }
+	}
+	break;
+
+    case options_changing_dwn:
+	if (actions == selection_enter)
+	{
+	    ans = resp_dwn;
+	    options_last = options;
+	    options = options_wait_free;
+	}
+
+	if (actions == selection_up)
+	{
+	    ans = resp_change;
+	    options_last = options_select;
+	    options = options_wait_free;
+
+            SCREEN_Text2_BlankLine2();
+
+            if (out == 2)
+            {
+                SCREEN_Text2_Line2 ("UP DWN NXT");	
+                Option_Selected_Pretty (1, 2, "NXT");
+            }
+            else
+            {
+                SCREEN_Text2_Line2 ("UP DWN OUT");	
+                Option_Selected_Pretty (1, 2, "OUT");
+            }
 	}
 	break;
 
@@ -228,8 +162,17 @@ resp_t Options_Up_Dwn_Next (sw_actions_t actions)
 	    options = options_wait_free;
 
             SCREEN_Text2_BlankLine2();
-            SCREEN_Text2_Line2 ("UP DWN NXT");	
-            Option_Selected_Pretty (1, 0, "UP");            
+
+            if (out == 2)
+            {
+                SCREEN_Text2_Line2 ("UP DWN NXT");	
+                Option_Selected_Pretty (1, 0, "UP");
+            }
+            else
+            {
+                SCREEN_Text2_Line2 ("UP DWN OUT");	
+                Option_Selected_Pretty (1, 0, "UP");
+            }
 	}	
 	break;
 
@@ -254,6 +197,103 @@ resp_t Options_Up_Dwn_Next (sw_actions_t actions)
     
     return ans;
 }
+
+
+// resp_t Options_Up_Dwn_Next (sw_actions_t actions)
+// {
+//     resp_t ans = resp_continue;
+
+//     switch (options)
+//     {
+//     case options_init:
+//         SCREEN_Text2_BlankLine2();
+// 	SCREEN_Text2_Line2 ("UP DWN NXT");	
+//         Option_Selected_Pretty (1, 2, "NXT");
+        
+// 	options = options_select;
+// 	break;
+
+//     case options_changing_up:
+// 	if (actions == selection_enter)
+// 	{
+// 	    ans = resp_up;
+// 	    options_last = options;
+// 	    options = options_wait_free;
+// 	}
+
+// 	if (actions == selection_up)
+// 	{
+// 	    ans = resp_change;
+// 	    options_last = options_changing_dwn;
+// 	    options = options_wait_free;
+
+//             SCREEN_Text2_BlankLine2();
+//             SCREEN_Text2_Line2 ("UP DWN NXT");	
+//             Option_Selected_Pretty (1, 1, "DWN");
+            
+// 	}
+// 	break;
+
+//     case options_changing_dwn:
+// 	if (actions == selection_enter)
+// 	{
+// 	    ans = resp_dwn;
+// 	    options_last = options;
+// 	    options = options_wait_free;
+// 	}
+
+// 	if (actions == selection_up)
+// 	{
+// 	    ans = resp_change;
+// 	    options_last = options_select;
+// 	    options = options_wait_free;
+
+//             SCREEN_Text2_BlankLine2();
+//             SCREEN_Text2_Line2 ("UP DWN NXT");	
+//             Option_Selected_Pretty (1, 2, "NXT");
+// 	}
+// 	break;
+
+//     case options_select:
+// 	if (actions == selection_enter)
+// 	{
+// 	    options_last = options_done;
+// 	    options = options_wait_free;
+// 	}
+
+// 	if (actions == selection_up)
+// 	{
+// 	    ans = resp_change;
+// 	    options_last = options_changing_up;
+// 	    options = options_wait_free;
+
+//             SCREEN_Text2_BlankLine2();
+//             SCREEN_Text2_Line2 ("UP DWN NXT");	
+//             Option_Selected_Pretty (1, 0, "UP");            
+// 	}	
+// 	break;
+
+//     case options_wait_free:
+// 	if (actions == selection_none)
+// 	{
+// 	    if (options_last == options_done)
+// 	    {
+// 		options = options_init;
+// 		ans = resp_ok;
+// 	    }
+// 	    else
+// 		options = options_last;
+// 	}
+// 	break;
+
+//     default:
+// 	options = options_init;
+// 	break;
+
+//     }
+    
+//     return ans;
+// }
 
 
 void Display_FloatingOptions (options_st * op)

@@ -53,7 +53,7 @@ gboolean Test_Main_Loop (gpointer user_data)
         mem.fixed_channels[2] = 0;
         mem.fixed_channels[3] = 0;
         mem.dmx_channel_quantity = 3;
-        mem.manual_inner_mode = 1;
+        mem.manual_inner_mode = 0;
         mem.manual_inner_speed = 3;
         
         printf("-- testing with %d channels on mode: %d speed: %d\n",
