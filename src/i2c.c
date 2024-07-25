@@ -54,12 +54,12 @@ void I2C1_Init (void)
     if (!RCC_I2C1_CLK)
         RCC_I2C1_CLKEN;
 
-    // Clock switch HSI to SYSCLK
-    // RCC->CFGR3 |= RCC_CFGR3_I2C1SW;
+    // Independent clock config, clock in PCLK
+    // RCC->CCIPR |= RCC_CCIPR_I2C1SEL_0;    //SYSCLK input
 
     // Speed and Port options
-    I2C1->TIMINGR = 0x00201D2B;    //for HSI
-    // I2C2->TIMINGR = 0x00300F38;    //for 64MHz clock 32MHz in PCLK -> 400KHz fastmode
+    I2C1->TIMINGR = 0x00300F38;    //for 64MHz clock 32MHz in PCLK -> 400KHz Fast Mode
+    // I2C1->TIMINGR = 0x00707CBB;    //for 64MHz clock 32MHz in PCLK -> 100KHz Standard Mode
     I2C1->CR1 = I2C_CR1_PE;
     I2C1->CR2 = I2C_CR2_AUTOEND |
         (2 << I2C_CR2_NBYTES_Pos) |
