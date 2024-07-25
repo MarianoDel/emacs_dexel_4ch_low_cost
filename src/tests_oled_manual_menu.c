@@ -23,6 +23,7 @@
 // Globals -- Externals for the tested Module ----------------------------------
 sw_actions_t switch_actions = selection_none;
 volatile unsigned short adc_ch [1];
+unsigned char dmx_local_data [4] = { 0 };
 
 
 // Globals ---------------------------------------------------------------------
@@ -52,7 +53,7 @@ gboolean Test_Main_Loop (gpointer user_data)
         mem.fixed_channels[1] = 255;
         mem.fixed_channels[2] = 0;
         mem.fixed_channels[3] = 0;
-        mem.dmx_channel_quantity = 3;
+        mem.dmx_channel_quantity = 4;
         mem.manual_inner_mode = 0;
         mem.manual_inner_speed = 3;
         

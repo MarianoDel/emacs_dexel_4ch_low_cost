@@ -255,7 +255,8 @@ void Manager (parameters_typedef * pmem)
             if ((resp == resp_change) ||
                 (resp == resp_need_to_save))
             {
-                FiltersAndOffsets_Channels_to_Backup (&(pmem->fixed_channels[0]));
+                // FiltersAndOffsets_Channels_to_Backup (&(pmem->fixed_channels[0]));
+                FiltersAndOffsets_Channels_to_Backup (dmx_local_data);                
             }
 
             if (resp == resp_need_to_save)

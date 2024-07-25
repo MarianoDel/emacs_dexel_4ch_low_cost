@@ -36,8 +36,12 @@ typedef enum {
 } manual_menu_state_e;
 
 
+#define CHANGE_OPT_TT    500
+#define CHANGE_MOD_TT    800
+
 // Externals -------------------------------------------------------------------
 extern volatile unsigned short adc_ch [];
+extern unsigned char dmx_local_data [];
 
 
 // Globals ---------------------------------------------------------------------
@@ -237,6 +241,9 @@ resp_t Manual_Menu_Fixed_Colors (parameters_typedef * mem,
         }
         SCREEN_Text2_Line2(s_temp);            
 
+        for (int i = 0; i < 4; i++)
+            dmx_local_data[i] = mem->fixed_channels[i];
+        
         *need_display_update = 1;
         resp = resp_change;    //first colors update
         inner_state++;
@@ -276,16 +283,10 @@ resp_t Manual_Menu_Fixed_Colors (parameters_typedef * mem,
             (actions == selection_enter))
             break;
 
-        Check_S2_Accel_Fast();
         inner_state++;
         break;
         
     case FIXED_CHANGE_RED:
-        // wait free
-        // if ((actions == selection_up) ||
-        //     (actions == selection_enter))
-        //     break;
-        
         SCREEN_Text2_BlankLine1();
         if (manual_menu_showing)
         {
@@ -308,7 +309,7 @@ resp_t Manual_Menu_Fixed_Colors (parameters_typedef * mem,
         {
             *need_display_update = 1;
             manual_menu_out_cnt = 20;
-            manual_menu_timer = 500;
+            manual_menu_timer = CHANGE_OPT_TT;
             manual_menu_showing = 1;
         }
         
@@ -319,8 +320,8 @@ resp_t Manual_Menu_Fixed_Colors (parameters_typedef * mem,
             if (*pch < 255)
                 *pch += 1;
 
-            // // force high velocity update
-            // Options_Up_Dwn_Next (selection_none);
+            dmx_local_data[0] = mem->fixed_channels[0];
+            Check_S2_Accel_Fast();
             inner_state--;
             resp = resp_need_to_save;
         }
@@ -332,13 +333,15 @@ resp_t Manual_Menu_Fixed_Colors (parameters_typedef * mem,
             if (*pch > 0)
                 *pch -= 1;
 
+            dmx_local_data[0] = mem->fixed_channels[0];
+            Check_S2_Accel_Fast();            
             inner_state--;            
             resp = resp_need_to_save;
         }
 
         if (!manual_menu_timer)
         {
-            manual_menu_timer = 500;
+            manual_menu_timer = CHANGE_OPT_TT;
             if (manual_menu_showing)
                 manual_menu_showing = 0;
             else
@@ -356,6 +359,7 @@ resp_t Manual_Menu_Fixed_Colors (parameters_typedef * mem,
 
         if (resp == resp_ok)
         {
+            Check_S2_Accel_Slow();
             inner_state++;
             resp = resp_continue;
         }
@@ -385,7 +389,7 @@ resp_t Manual_Menu_Fixed_Colors (parameters_typedef * mem,
         {
             *need_display_update = 1;
             manual_menu_out_cnt = 20;
-            manual_menu_timer = 500;
+            manual_menu_timer = CHANGE_OPT_TT;
             manual_menu_showing = 1;
         }
 
@@ -396,6 +400,8 @@ resp_t Manual_Menu_Fixed_Colors (parameters_typedef * mem,
             if (*pch < 255)
                 *pch += 1;
 
+            dmx_local_data[1] = mem->fixed_channels[1];
+            Check_S2_Accel_Fast();
             inner_state--;
             resp = resp_need_to_save;
         }
@@ -406,14 +412,16 @@ resp_t Manual_Menu_Fixed_Colors (parameters_typedef * mem,
             // if actions selection_all_up, change fast
             if (*pch > 0)
                 *pch -= 1;
-            
+
+            dmx_local_data[1] = mem->fixed_channels[1];
+            Check_S2_Accel_Fast();            
             inner_state--;
             resp = resp_need_to_save;
         }
 
         if (!manual_menu_timer)
         {
-            manual_menu_timer = 500;
+            manual_menu_timer = CHANGE_OPT_TT;
             if (manual_menu_showing)
                 manual_menu_showing = 0;
             else
@@ -425,12 +433,13 @@ resp_t Manual_Menu_Fixed_Colors (parameters_typedef * mem,
             if (!manual_menu_out_cnt)
             {
                 Check_S2_Accel_Slow();
-                inner_state = FIXED_SHOW_FIRST;                
+                inner_state = FIXED_SHOW_FIRST;
             }
         }
 
         if (resp == resp_ok)
         {
+            Check_S2_Accel_Slow();            
             inner_state++;
             resp = resp_continue;
         }
@@ -460,7 +469,7 @@ resp_t Manual_Menu_Fixed_Colors (parameters_typedef * mem,
         {
             *need_display_update = 1;
             manual_menu_out_cnt = 20;
-            manual_menu_timer = 500;
+            manual_menu_timer = CHANGE_OPT_TT;
             manual_menu_showing = 1;
         }
         
@@ -471,6 +480,8 @@ resp_t Manual_Menu_Fixed_Colors (parameters_typedef * mem,
             if (*pch < 255)
                 *pch += 1;
 
+            dmx_local_data[2] = mem->fixed_channels[2];
+            Check_S2_Accel_Fast();            
             inner_state--;
             resp = resp_need_to_save;
         }
@@ -481,14 +492,16 @@ resp_t Manual_Menu_Fixed_Colors (parameters_typedef * mem,
             // if actions selection_all_up, change fast
             if (*pch > 0)
                 *pch -= 1;
-            
+
+            dmx_local_data[2] = mem->fixed_channels[2];
+            Check_S2_Accel_Fast();            
             inner_state--;
             resp = resp_need_to_save;
         }
 
         if (!manual_menu_timer)
         {
-            manual_menu_timer = 500;
+            manual_menu_timer = CHANGE_OPT_TT;
             if (manual_menu_showing)
                 manual_menu_showing = 0;
             else
@@ -510,12 +523,12 @@ resp_t Manual_Menu_Fixed_Colors (parameters_typedef * mem,
                 inner_state++;
             else
             {
-                Check_S2_Accel_Slow();
                 inner_state = FIXED_CHANGE_MODE;
 
                 // save actual inner mode
                 manual_menu_last_inner_mode = mem->manual_inner_mode;
             }
+            Check_S2_Accel_Slow();
             resp = resp_continue;            
         }
         break;
@@ -544,7 +557,7 @@ resp_t Manual_Menu_Fixed_Colors (parameters_typedef * mem,
         {
             *need_display_update = 1;
             manual_menu_out_cnt = 20;
-            manual_menu_timer = 500;
+            manual_menu_timer = CHANGE_OPT_TT;
             manual_menu_showing = 1;
         }
         
@@ -555,6 +568,8 @@ resp_t Manual_Menu_Fixed_Colors (parameters_typedef * mem,
             if (*pch < 255)
                 *pch += 1;
 
+            dmx_local_data[3] = mem->fixed_channels[3];
+            Check_S2_Accel_Fast();            
             inner_state--;
             resp = resp_need_to_save;
         }
@@ -565,14 +580,16 @@ resp_t Manual_Menu_Fixed_Colors (parameters_typedef * mem,
             // if actions selection_all_up, change fast
             if (*pch > 0)
                 *pch -= 1;
-            
+
+            dmx_local_data[3] = mem->fixed_channels[3];
+            Check_S2_Accel_Fast();            
             inner_state--;
             resp = resp_need_to_save;
         }
 
         if (!manual_menu_timer)
         {
-            manual_menu_timer = 500;
+            manual_menu_timer = CHANGE_OPT_TT;
             if (manual_menu_showing)
                 manual_menu_showing = 0;
             else
@@ -633,7 +650,7 @@ resp_t Manual_Menu_Fixed_Colors (parameters_typedef * mem,
         {
             *need_display_update = 1;
             manual_menu_out_cnt = 20;
-            manual_menu_timer = 500;
+            manual_menu_timer = CHANGE_MOD_TT;
             manual_menu_showing = 1;
         }
         
@@ -652,7 +669,7 @@ resp_t Manual_Menu_Fixed_Colors (parameters_typedef * mem,
 
         if (!manual_menu_timer)
         {
-            manual_menu_timer = 500;
+            manual_menu_timer = CHANGE_MOD_TT;
             if (manual_menu_showing)
                 manual_menu_showing = 0;
             else
@@ -663,7 +680,6 @@ resp_t Manual_Menu_Fixed_Colors (parameters_typedef * mem,
 
             if (!manual_menu_out_cnt)
             {
-                Check_S2_Accel_Slow();
                 inner_state = FIXED_SHOW_FIRST;
                 if (manual_menu_last_inner_mode != mem->manual_inner_mode)
                     resp = resp_ok;
@@ -784,13 +800,13 @@ resp_t Manual_Menu_Fading (parameters_typedef * mem,
 
     case FADING_CHANGING_SPEED:
         
-        resp = Options_Up_Dwn_Select (actions);
+        resp = Options_Up_Dwn_Next (actions);
 
         if (resp != resp_continue)
         {
             *need_display_update = 1;
             manual_menu_out_cnt = 20;
-            manual_menu_timer = 500;
+            manual_menu_timer = CHANGE_OPT_TT;
             manual_menu_showing = 1;
         }
         
@@ -820,7 +836,7 @@ resp_t Manual_Menu_Fading (parameters_typedef * mem,
 
         if (!manual_menu_timer)
         {
-            manual_menu_timer = 500;
+            manual_menu_timer = CHANGE_OPT_TT;
             if (manual_menu_showing)
                 manual_menu_showing = 0;
             else
@@ -880,7 +896,7 @@ resp_t Manual_Menu_Fading (parameters_typedef * mem,
         {
             *need_display_update = 1;
             manual_menu_out_cnt = 20;
-            manual_menu_timer = 500;
+            manual_menu_timer = CHANGE_MOD_TT;
             manual_menu_showing = 1;
         }
         
@@ -899,7 +915,7 @@ resp_t Manual_Menu_Fading (parameters_typedef * mem,
 
         if (!manual_menu_timer)
         {
-            manual_menu_timer = 500;
+            manual_menu_timer = CHANGE_MOD_TT;
             if (manual_menu_showing)
                 manual_menu_showing = 0;
             else
@@ -940,7 +956,8 @@ resp_t Manual_Menu_Fading (parameters_typedef * mem,
     {
         if (!manual_effect_timer)
         {
-            resp = Colors_Fading_Shuffle_Pallete (mem->fixed_channels);
+            // resp = Colors_Fading_Shuffle_Pallete (mem->fixed_channels);
+            resp = Colors_Fading_Shuffle_Pallete (dmx_local_data);            
             manual_effect_timer = 10 - mem->manual_inner_speed;
             resp = resp_change;
         }
@@ -1041,13 +1058,13 @@ resp_t Manual_Menu_Skipping (parameters_typedef * mem,
 
     case SKIPPING_CHANGING_SPEED:
         
-        resp = Options_Up_Dwn_Select (actions);
+        resp = Options_Up_Dwn_Next (actions);
 
         if (resp != resp_continue)
         {
             *need_display_update = 1;
             manual_menu_out_cnt = 20;
-            manual_menu_timer = 500;
+            manual_menu_timer = CHANGE_OPT_TT;
             manual_menu_showing = 1;
         }
         
@@ -1077,7 +1094,7 @@ resp_t Manual_Menu_Skipping (parameters_typedef * mem,
 
         if (!manual_menu_timer)
         {
-            manual_menu_timer = 500;
+            manual_menu_timer = CHANGE_OPT_TT;
             if (manual_menu_showing)
                 manual_menu_showing = 0;
             else
@@ -1137,7 +1154,7 @@ resp_t Manual_Menu_Skipping (parameters_typedef * mem,
         {
             *need_display_update = 1;
             manual_menu_out_cnt = 20;
-            manual_menu_timer = 500;
+            manual_menu_timer = CHANGE_MOD_TT;
             manual_menu_showing = 1;
         }
         
@@ -1156,7 +1173,7 @@ resp_t Manual_Menu_Skipping (parameters_typedef * mem,
 
         if (!manual_menu_timer)
         {
-            manual_menu_timer = 500;
+            manual_menu_timer = CHANGE_MOD_TT;
             if (manual_menu_showing)
                 manual_menu_showing = 0;
             else
@@ -1197,7 +1214,8 @@ resp_t Manual_Menu_Skipping (parameters_typedef * mem,
     {
         if (!manual_effect_timer)
         {
-            resp = Colors_Strobe_Pallete (mem->fixed_channels);
+            // resp = Colors_Strobe_Pallete (mem->fixed_channels);
+            resp = Colors_Strobe_Pallete (dmx_local_data);            
             manual_effect_timer = 1000 - mem->manual_inner_speed * 100;
             resp = resp_change;
         }                
