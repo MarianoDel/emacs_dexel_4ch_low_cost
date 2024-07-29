@@ -43,9 +43,15 @@ unsigned short PWM_Map_From_Dmx_Short (unsigned short adj_val)
     if (adj_val)
     {
         pwm = adj_val >> 4;
-        if (pwm < 29)
-            pwm = 29;
+        // if (pwm < 29)    // original
+        //     pwm = 29;
+        
+        if (pwm < 38)
+            pwm = 38;
     }
+
+    if (pwm > 4095)
+        pwm = 4095;
 
     return (unsigned short) pwm;
 
