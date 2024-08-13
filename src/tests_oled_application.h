@@ -12,9 +12,9 @@ gboolean Test_Main_Loop (gpointer user_data);
 gboolean Test_Timeouts_Loop_1ms (gpointer user_data);
 gboolean Test_Timeouts_Loop_1000ms (gpointer user_data);
 
-void cw_button_function (void);
-void ccw_button_function (void);
-void set_button_function (void);
+void button1_function (void);
+void button2_function (void);
+void button3_function (void);
 
 
 //--- end of file ---//

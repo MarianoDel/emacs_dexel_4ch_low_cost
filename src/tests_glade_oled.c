@@ -80,10 +80,14 @@ int main(int argc, char *argv[])
     GtkWidget *btn4 = (GtkWidget *) gtk_builder_get_object (builder, "quitButton");
     imag1 = (GtkWidget *) gtk_builder_get_object (builder, "image1");
 
-    g_signal_connect(btn1, "clicked", G_CALLBACK(cw_button_function), NULL);    
-    g_signal_connect(btn2, "clicked", G_CALLBACK(ccw_button_function), NULL);
-    g_signal_connect(btn3, "clicked", G_CALLBACK(set_button_function), NULL);    
-    g_signal_connect(btn4, "clicked", G_CALLBACK(end_program), NULL);    
+    g_signal_connect(btn1, "clicked", G_CALLBACK(button1_function), NULL);    
+    g_signal_connect(btn2, "clicked", G_CALLBACK(button2_function), NULL);
+    g_signal_connect(btn3, "clicked", G_CALLBACK(button3_function), NULL);    
+    g_signal_connect(btn4, "clicked", G_CALLBACK(end_program), NULL);
+
+    gtk_button_set_label(GTK_BUTTON(btn1), "S1");
+    gtk_button_set_label(GTK_BUTTON(btn2), "S2");
+    gtk_button_set_label(GTK_BUTTON(btn3), "S1 & S2");        
 
     gtk_widget_show_all (win);
     init_surface();

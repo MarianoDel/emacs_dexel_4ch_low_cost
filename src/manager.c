@@ -44,6 +44,7 @@ typedef enum {
     MNGR_IN_MANUAL_MODE,
     MNGR_ENTERING_MAIN_MENU,
     MNGR_WAIT_ENTERING_MAIN_MENU,
+    MNGR_WAIT_ENTERING_MAIN_MENU_WAIT_FREE,    
     MNGR_IN_MAIN_MENU
     
 } manager_states_e;
@@ -92,6 +93,7 @@ volatile unsigned short need_to_save_timer = 0;
 volatile unsigned short timer_mngr = 0;
 volatile unsigned char protections_sample_timer = 0;
 
+unsigned char mngr_main_menu_cnt = 0;
 
 // -- for temp sense
 unsigned char check_probe_temp = 0;
@@ -302,6 +304,7 @@ void Manager (parameters_typedef * pmem)
         SCREEN_Text2_BlankLine1();
         SCREEN_Text2_BlankLine2();
         Wait_ms(250);
+        mngr_main_menu_cnt = 0;
         mngr_state++;
         break;
 
@@ -310,11 +313,33 @@ void Manager (parameters_typedef * pmem)
             mngr_state = MNGR_INIT;
         else if (Check_S1() > SW_NO)
         {
-            Main_Menu_Reset();
+            char s_temp[20];
+            if (mngr_main_menu_cnt)
+            {
+                SCREEN_Text2_BlankLine1();
+                sprintf(s_temp, "%d", mngr_main_menu_cnt);
+                SCREEN_Text2_Line1(s_temp);
+            }
             mngr_state++;
         }
         break;
-            
+
+    case MNGR_WAIT_ENTERING_MAIN_MENU_WAIT_FREE:
+        if (Check_S2() < SW_HALF)
+            mngr_state = MNGR_INIT;
+        else if (Check_S1() == SW_NO)
+        {
+            if (mngr_main_menu_cnt < 5 - 1)
+            {
+                mngr_main_menu_cnt++;
+                mngr_state--;
+            }
+            else
+                mngr_state++;
+
+        }
+        break;
+        
     case MNGR_IN_MAIN_MENU:
         action = CheckActions();
             

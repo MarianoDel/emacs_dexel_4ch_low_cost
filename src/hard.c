@@ -44,17 +44,33 @@ void HARD_Timeouts (void)
 // Switches Routines -----------------------------------------------------------
 unsigned short s1_cntr = 0;
 unsigned short s2_cntr = 0;
+
+unsigned char s1_accel = 0;
 resp_sw_t Check_S1 (void)
 {
     resp_sw_t sw = SW_NO;
 
     if (s1_cntr > SWITCHES_THRESHOLD_MIN)
     {
-        // s1_cntr -= SWITCHES_THRESHOLD_MIN;
+        if (s1_accel)
+            s1_cntr -= SWITCHES_THRESHOLD_MIN;
+        
         sw = SW_MIN;
     }
 
     return sw;    
+}
+
+
+void Check_S1_Accel_Fast (void)
+{
+    s1_accel = 1;
+}
+
+
+void Check_S1_Accel_Slow (void)
+{
+    s1_accel = 0;
 }
 
 
@@ -134,16 +150,21 @@ sw_actions_t CheckActions (void)
     if (Check_S1 () > SW_NO)
         sw = selection_up;
 
-    // if (Check_SW_DWN () > SW_NO)
-    //     sw = selection_dwn;
-
     resp_sw_t s_sel = SW_NO;
     s_sel = Check_S2 ();
     
-    if (s_sel > SW_HALF)
+    if ((s_sel > SW_HALF) && (sw != selection_up))
+    {
+        //cant get back if s1 is pressed
         sw = selection_back;
+    }
     else if (s_sel > SW_NO)
-        sw = selection_enter;
+    {
+        if (sw == selection_up)
+            sw = selection_enter;
+        else
+            sw = selection_dwn;
+    }
     
     return sw;
     

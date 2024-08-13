@@ -133,6 +133,8 @@ void HARD_Timeouts (void);
 
 resp_sw_t Check_S1 (void);
 resp_sw_t Check_S2 (void);
+void Check_S1_Accel_Fast (void);
+void Check_S1_Accel_Slow (void);
 void Check_S2_Accel_Fast (void);
 void Check_S2_Accel_Slow (void);
 sw_actions_t CheckActions (void);

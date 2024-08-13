@@ -25,6 +25,7 @@
 typedef enum {
     DMX_MENU_INIT = 0,
     DMX_MENU_SHOW_FIRST,
+    DMX_MENU_WAIT_INPUTS,
     DMX_MENU_STANDBY,
     DMX_MENU_WAIT_CHANGE_ADDRESS,
     DMX_MENU_CHANGE_ADDRESS,
@@ -34,6 +35,10 @@ typedef enum {
 } dmx_menu_state_e;
 
 #define TT_DMX_RECEIVING    1000
+
+#define CHANGE_OPT_TT    500
+#define OPT_CNT_NEXT    3
+
 
 // Externals -------------------------------------------------------------------
 // - for DMX receiver
@@ -54,6 +59,9 @@ unsigned char dmx_menu_update_values = 0;
 unsigned short dmx_mode_dmx_receiving_timer = 0;
 
 unsigned char dmx_local_data [4] = { 0 };
+
+sw_actions_t dmx_menu_last_action = selection_none;
+
 // Module Private Functions ----------------------------------------------------
 
 
@@ -78,6 +86,7 @@ resp_t Dmx_Menu (parameters_typedef * mem, sw_actions_t actions)
     unsigned char dmx_need_display_update = 0;
     resp_t resp = resp_continue;
     char s_temp[20];
+    unsigned short * paddr;
 
     switch (dmx_state)
     {
@@ -120,17 +129,47 @@ resp_t Dmx_Menu (parameters_typedef * mem, sw_actions_t actions)
         // resp = resp_change;    //first colors update
         dmx_state++;
         break;
-        
-    case DMX_MENU_STANDBY:
-        if (actions == selection_enter)
+
+    case DMX_MENU_WAIT_INPUTS:
+        if (actions != selection_none)
         {
-            Options_Up_Dwn_Select_Reset();
-            dmx_menu_out_cnt = 20;
+            dmx_menu_last_action = actions;
+            dmx_menu_timer = 200;
             dmx_state++;
         }
 
-        if (actions == selection_up)
+        if (dmx_menu_update_values)
         {
+            dmx_menu_update_values = 0;
+            dmx_state--;
+        }        
+        break;
+        
+    case DMX_MENU_STANDBY:
+        if (dmx_menu_timer)
+            break;
+
+        // change address, out by timer
+        if ((actions == selection_dwn) &&
+            (dmx_menu_last_action == selection_dwn))
+        {
+            dmx_menu_out_cnt = OPT_CNT_NEXT;
+            dmx_state++;
+        }
+
+        // change address, out by timer        
+        if ((actions == selection_up) &&
+            (dmx_menu_last_action == selection_up))
+        {
+            dmx_menu_out_cnt = OPT_CNT_NEXT;            
+            dmx_state++;
+        }
+
+        // show current temp
+        if ((actions == selection_enter) ||
+            ((actions == selection_dwn) && (dmx_menu_last_action == selection_up)) ||
+            ((actions == selection_up) && (dmx_menu_last_action == selection_dwn)))
+        {        
             char s_temp [20];
             SCREEN_Text2_BlankLine1();
             SCREEN_Text2_BlankLine2();
@@ -145,21 +184,16 @@ resp_t Dmx_Menu (parameters_typedef * mem, sw_actions_t actions)
             dmx_menu_timer = 1200;
             dmx_state = DMX_MENU_SHOW_TEMP;
         }
-        
-        if (dmx_menu_update_values)
-        {
-            dmx_menu_update_values = 0;
-            dmx_state--;
-        }
         break;
 
     case DMX_MENU_WAIT_CHANGE_ADDRESS:
         // wait free
-        if ((actions == selection_up) ||
-            (actions == selection_enter))
+        if (actions != selection_none)
             break;
 
-        Check_S2_Accel_Fast();
+        SCREEN_Text2_BlankLine2();
+        Check_S1_Accel_Fast();
+        Check_S2_Accel_Fast();        
         dmx_state++;
         break;
 
@@ -179,64 +213,57 @@ resp_t Dmx_Menu (parameters_typedef * mem, sw_actions_t actions)
         break;
 
     case DMX_MENU_CHANGING_ADDRESS:
+        paddr = &(mem->dmx_first_channel);
         
-        resp = Options_Up_Dwn_Select (actions);
+        if ((actions == selection_up) ||
+            (actions == selection_dwn))
+        {
+            if (actions == selection_up)
+            {
+                if (*paddr < 512 - mem->dmx_channel_quantity - 1)
+                    *paddr += 1;
 
-        if (resp != resp_continue)
-        {
-            dmx_need_display_update = 1;
-            dmx_menu_out_cnt = 20;
-            dmx_menu_timer = 500;
-            dmx_menu_showing = 1;
-        }
-        
-        if (resp == resp_up)
-        {
-            unsigned short * pch = &(mem->dmx_first_channel);
-            // if actions selection_all_up, change fast
-            if (*pch < 512 - mem->dmx_channel_quantity - 1)
-                *pch += 1;
+            }
+            else
+            {
+                if (*paddr > 1)
+                    *paddr -= 1;
+
+            }
 
             dmx_state--;
             DMX_channel_selected = mem->dmx_first_channel;
-        }
 
-        if (resp == resp_dwn)
-        {
-            unsigned short * pch = &(mem->dmx_first_channel);
-            // if actions selection_all_up, change fast
-            if (*pch > 1)
-                *pch -= 1;
-
-            dmx_state--;
-            DMX_channel_selected = mem->dmx_first_channel;            
+            dmx_menu_timer = CHANGE_OPT_TT;
+            dmx_menu_out_cnt = OPT_CNT_NEXT;
+            dmx_menu_showing = 1;            
         }
 
         if (!dmx_menu_timer)
         {
-            dmx_menu_timer = 500;
+            dmx_menu_timer = CHANGE_OPT_TT;
             if (dmx_menu_showing)
-                dmx_menu_showing = 0;
-            else
-                dmx_menu_showing = 1;
-
-            dmx_state--;
-            dmx_menu_out_cnt--;
-
-            if (!dmx_menu_out_cnt)
             {
-                resp = resp_need_to_save;
-                Check_S2_Accel_Slow();
-                dmx_state = DMX_MENU_SHOW_FIRST;                
+                if (dmx_menu_out_cnt)
+                {
+                    dmx_state--;
+                    dmx_menu_out_cnt--;
+                    dmx_menu_showing = 0;
+                }
+                else
+                {
+                    Check_S1_Accel_Slow();                    
+                    Check_S2_Accel_Slow();
+                    dmx_state = DMX_MENU_SHOW_FIRST;
+                    resp = resp_need_to_save;                
+                }
             }
-        }
-
-        if (resp == resp_ok)
-        {
-            Check_S2_Accel_Slow();
-            resp = resp_need_to_save;
-            dmx_state = DMX_MENU_SHOW_FIRST;
-        }
+            else
+            {
+                dmx_menu_showing = 1;
+                dmx_state--;
+            }
+        }        
         break;
 
     case DMX_MENU_SHOW_TEMP:

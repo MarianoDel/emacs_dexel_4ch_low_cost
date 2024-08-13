@@ -135,7 +135,7 @@ gboolean Test_Timeouts_Loop_1000ms (gpointer user_data)
 
 // Module Implementation of buttons functions
 // only two switches, answers always up
-void cw_button_function (void)
+void button1_function (void)
 {
     g_mutex_lock (&mutex);
     switch_actions = selection_up;
@@ -143,15 +143,15 @@ void cw_button_function (void)
 }
 
 
-void ccw_button_function (void)
+void button2_function (void)
 {
     g_mutex_lock (&mutex);
-    switch_actions = selection_up;
+    switch_actions = selection_dwn;
     g_mutex_unlock (&mutex);
 }
 
 
-void set_button_function (void)
+void button3_function (void)
 {
     g_mutex_lock (&mutex);
     switch_actions = selection_enter;
@@ -168,6 +168,16 @@ unsigned char Manager_Probe_Temp_Get (void)
 unsigned char Temp_TempToDegreesExtended (unsigned short temp)
 {
     return 30;
+}
+
+
+void Check_S1_Accel_Fast (void)
+{
+}
+
+
+void Check_S1_Accel_Slow (void)
+{
 }
 
 

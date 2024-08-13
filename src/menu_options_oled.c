@@ -91,7 +91,7 @@ resp_t Options_Up_Dwn_Select_Out (sw_actions_t actions, unsigned char out)
 	break;
 
     case options_changing_up:
-	if (actions == selection_enter)
+	if (actions == selection_dwn)
 	{
 	    ans = resp_up;
 	    options_last = options;
@@ -120,7 +120,7 @@ resp_t Options_Up_Dwn_Select_Out (sw_actions_t actions, unsigned char out)
 	break;
 
     case options_changing_dwn:
-	if (actions == selection_enter)
+	if (actions == selection_dwn)
 	{
 	    ans = resp_dwn;
 	    options_last = options;
@@ -149,7 +149,7 @@ resp_t Options_Up_Dwn_Select_Out (sw_actions_t actions, unsigned char out)
 	break;
 
     case options_select:
-	if (actions == selection_enter)
+	if (actions == selection_dwn)
 	{
 	    options_last = options_done;
 	    options = options_wait_free;
