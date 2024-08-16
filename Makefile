@@ -358,4 +358,16 @@ tests_oled_main_menu:
 	# ./tests_gtk
 
 
+tests_pwm_post_map:
+	# first compile common modules (modules to test and dependencies)
+	gcc -c src/pwm.c -I. $(INCDIR)
+	# gcc -c src/filters_and_offsets.c -I. $(INCDIR)
+	gcc -c src/dsp.c -I. $(INCDIR)
+	# second auxiliary helper modules
+	gcc -c src/tests_ok.c -I $(INCDIR)
+	gcc -c src/tests_vector_utils.c -I $(INCDIR)
+	gcc src/tests_pwm_post_map.c pwm.o tests_ok.o tests_vector_utils.o dsp.o
+	./a.out
+
+
 # *** EOF ***

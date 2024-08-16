@@ -15,6 +15,9 @@
 #include "tim.h"
 
 
+// #define FILTER_MA32
+#define FILTER_MA16
+// #define FILTER_MA8
 // Externals -------------------------------------------------------------------
 extern parameters_typedef mem_conf;
 
@@ -28,10 +31,24 @@ extern volatile unsigned char dmx_filters_timer;
 
 
 // Globals ---------------------------------------------------------------------
+#ifdef FILTER_MA16
 ma16_u16_data_obj_t st_sp1;
 ma16_u16_data_obj_t st_sp2;
 ma16_u16_data_obj_t st_sp3;
 ma16_u16_data_obj_t st_sp4;
+#endif
+#ifdef FILTER_MA32
+ma32_u16_data_obj_t st_sp1;
+ma32_u16_data_obj_t st_sp2;
+ma32_u16_data_obj_t st_sp3;
+ma32_u16_data_obj_t st_sp4;
+#endif
+#ifdef FILTER_MA8
+ma8_u16_data_obj_t st_sp1;
+ma8_u16_data_obj_t st_sp2;
+ma8_u16_data_obj_t st_sp3;
+ma8_u16_data_obj_t st_sp4;
+#endif
 
 volatile unsigned char ch_bkp_val [4] = { 0 };
 volatile unsigned short limit_output [4] = { 0 };
@@ -107,24 +124,9 @@ void FiltersAndOffsets_Calc_SM (void)
 
         calc = limit_output[3] * mem_conf.max_current_channels[3];
         limit_output[3] = (unsigned short) calc;
-
-        // calc = limit_output[0] * mem_conf.max_current_channels[0];
-        // calc >>= 8;
-        // limit_output[0] = (unsigned char) calc;
-
-        // calc = limit_output[1] * mem_conf.max_current_channels[1];
-        // calc >>= 8;
-        // limit_output[1] = (unsigned char) calc;
-
-        // calc = limit_output[2] * mem_conf.max_current_channels[2];
-        // calc >>= 8;
-        // limit_output[2] = (unsigned char) calc;
-
-        // calc = limit_output[3] * mem_conf.max_current_channels[3];
-        // calc >>= 8;
-        // limit_output[3] = (unsigned char) calc;
         
         filters_sm++;
+        // filters_sm = FILTERS_OUTPUTS_CH1_CH2;        
         break;
 
     case FILTERS_LIMIT_ALL_CHANNELS:
@@ -135,75 +137,100 @@ void FiltersAndOffsets_Calc_SM (void)
         break;
 
     case FILTERS_OUTPUTS_CH1_CH2:
-        // if (mem_conf.program_inner_type == DMX2_INNER_STROBE_MODE)
-        // {
-        //     //outputs without filter
-        //     // channel 1
-        //     ch_pwm = PWM_Map_From_Dmx(*(limit_output + CH1_VAL_OFFSET));
-        //     PWM_Update_CH1(ch_pwm);
+#ifdef FILTER_MA8
+        // channel 1
+        ch_pwm = MA8_U16Circular (
+            &st_sp1,
+            PWM_Map_From_Dmx_Short(*(limit_output + 0))
+            );
+        PWM_Update_CH1(ch_pwm);
 
-        //     // channel 2
-        //     ch_pwm = PWM_Map_From_Dmx(*(limit_output + CH2_VAL_OFFSET));
-        //     PWM_Update_CH2(ch_pwm);
+        // channel 2
+        ch_pwm = MA8_U16Circular (
+            &st_sp2,
+            PWM_Map_From_Dmx_Short(*(limit_output + 1))
+            );
+        PWM_Update_CH2(ch_pwm);
+#endif
+#ifdef FILTER_MA16
+        // channel 1
+        ch_pwm = MA16_U16Circular (
+            &st_sp1,
+            PWM_Map_From_Dmx_Short(*(limit_output + 0))
+            );
+        PWM_Update_CH1(ch_pwm);
 
-        //     // channel 3
-        //     ch_pwm = PWM_Map_From_Dmx(*(limit_output + CH3_VAL_OFFSET));
-        //     PWM_Update_CH3(ch_pwm);
-        // }
-        // else
-        // {
-            // channel 1
-            ch_pwm = MA16_U16Circular (
-                &st_sp1,
-                PWM_Map_From_Dmx_Short(*(limit_output + 0))
-                );
-            PWM_Update_CH1(ch_pwm);
+        // channel 2
+        ch_pwm = MA16_U16Circular (
+            &st_sp2,
+            PWM_Map_From_Dmx_Short(*(limit_output + 1))
+            );
+        PWM_Update_CH2(ch_pwm);
+#endif
+#ifdef FILTER_MA32
+        // channel 1
+        ch_pwm = MA32_U16Circular (
+            &st_sp1,
+            PWM_Map_From_Dmx_Short(*(limit_output + 0))
+            );
+        PWM_Update_CH1(ch_pwm);
 
-            // channel 2
-            ch_pwm = MA16_U16Circular (
-                &st_sp2,
-                PWM_Map_From_Dmx_Short(*(limit_output + 1))
-                );
-            PWM_Update_CH2(ch_pwm);
-
-        // }
-
+        // channel 2
+        ch_pwm = MA32_U16Circular (
+            &st_sp2,
+            PWM_Map_From_Dmx_Short(*(limit_output + 1))
+            );
+        PWM_Update_CH2(ch_pwm);
+#endif
         filters_sm++;
         break;
 
     case FILTERS_OUTPUTS_CH3_CH4:
-        // if (mem_conf.program_inner_type == DMX2_INNER_STROBE_MODE)
-        // {
-        //     //outputs without filter
-        //     // channel 4
-        //     ch_pwm = PWM_Map_From_Dmx(*(limit_output + CH4_VAL_OFFSET));
-        //     PWM_Update_CH4(ch_pwm);
+#ifdef FILTER_MA8
+        // channel 3
+        ch_pwm = MA8_U16Circular (
+            &st_sp3,
+            PWM_Map_From_Dmx_Short(*(limit_output + 2))
+            );
+        PWM_Update_CH3(ch_pwm);
 
-        //     // channel 5
-        //     ch5_pwm = PWM_Map_From_Dmx(*(limit_output + CH5_VAL_OFFSET));
-        //     PWM_Update_CH5(ch5_pwm);
+        // channel 4
+        ch_pwm = MA8_U16Circular (
+            &st_sp4,
+            PWM_Map_From_Dmx_Short(*(limit_output + 3))
+            );
+        PWM_Update_CH4(ch_pwm);
+#endif
+#ifdef FILTER_MA16
+        // channel 3
+        ch_pwm = MA16_U16Circular (
+            &st_sp3,
+            PWM_Map_From_Dmx_Short(*(limit_output + 2))
+            );
+        PWM_Update_CH3(ch_pwm);
 
-        //     // channel 6
-        //     ch6_pwm = PWM_Map_From_Dmx(*(limit_output + CH6_VAL_OFFSET));
-        //     PWM_Update_CH6(ch6_pwm);
-        // }
-        // else
-        // {
-            // channel 3
-            ch_pwm = MA16_U16Circular (
-                &st_sp3,
-                PWM_Map_From_Dmx_Short(*(limit_output + 2))
-                );
-            PWM_Update_CH3(ch_pwm);
+        // channel 4
+        ch_pwm = MA16_U16Circular (
+            &st_sp4,
+            PWM_Map_From_Dmx_Short(*(limit_output + 3))
+            );
+        PWM_Update_CH4(ch_pwm);
+#endif
+#ifdef FILTER_MA32
+        // channel 3
+        ch_pwm = MA32_U16Circular (
+            &st_sp3,
+            PWM_Map_From_Dmx_Short(*(limit_output + 2))
+            );
+        PWM_Update_CH3(ch_pwm);
 
-            // channel 4
-            ch_pwm = MA16_U16Circular (
-                &st_sp4,
-                PWM_Map_From_Dmx_Short(*(limit_output + 3))
-                );
-            PWM_Update_CH4(ch_pwm);
-        // }
-
+        // channel 4
+        ch_pwm = MA32_U16Circular (
+            &st_sp4,
+            PWM_Map_From_Dmx_Short(*(limit_output + 3))
+            );
+        PWM_Update_CH4(ch_pwm);
+#endif
         filters_sm = FILTERS_BKP_CHANNELS;
         break;
         
@@ -216,10 +243,24 @@ void FiltersAndOffsets_Calc_SM (void)
 
 void FiltersAndOffsets_Filters_Reset (void)
 {
+#ifdef FILTER_MA8
+    MA8_U16Circular_Reset(&st_sp1);
+    MA8_U16Circular_Reset(&st_sp2);
+    MA8_U16Circular_Reset(&st_sp3);
+    MA8_U16Circular_Reset(&st_sp4);
+#endif
+#ifdef FILTER_MA16
     MA16_U16Circular_Reset(&st_sp1);
     MA16_U16Circular_Reset(&st_sp2);
     MA16_U16Circular_Reset(&st_sp3);
     MA16_U16Circular_Reset(&st_sp4);
+#endif
+#ifdef FILTER_MA32
+    MA32_U16Circular_Reset(&st_sp1);
+    MA32_U16Circular_Reset(&st_sp2);
+    MA32_U16Circular_Reset(&st_sp3);
+    MA32_U16Circular_Reset(&st_sp4);
+#endif
 }
 
 

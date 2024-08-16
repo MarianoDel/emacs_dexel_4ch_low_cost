@@ -318,7 +318,7 @@ void Manager (parameters_typedef * pmem)
             {
                 SCREEN_Text2_BlankLine1();
                 sprintf(s_temp, "%d", mngr_main_menu_cnt);
-                SCREEN_Text2_Line1(s_temp);
+                SCREEN_Text2_Line1(s_temp);                
             }
             mngr_state++;
         }

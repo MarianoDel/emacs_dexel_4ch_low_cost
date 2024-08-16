@@ -12,9 +12,9 @@
 //--- Defines for configuration -----------------
 // #define USE_PID_CONTROLLERS
 // #define USE_MA32_U8_CIRCULAR
-// #define USE_MA8_U16_CIRCULAR
+#define USE_MA8_U16_CIRCULAR
 #define USE_MA16_U16_CIRCULAR
-// #define USE_MA32_U16_CIRCULAR
+#define USE_MA32_U16_CIRCULAR
 
 
 //--- Exported constants ------------------------
