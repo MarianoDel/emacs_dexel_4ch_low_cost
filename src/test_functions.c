@@ -543,7 +543,7 @@ void TF_I2C1_I2C2_Oled (void)
 
     SCREEN_Init ();
     int j = 0;
-    char lbuf[10] = { 0 };
+    char lbuf[17] = { 0 };
     while (1)
     {
         // estas 3 juntas ok

@@ -186,11 +186,19 @@ int main(void)
     {
         // Default mem config
         mem_conf.dmx_first_channel = 1;
-        mem_conf.dmx_channel_quantity = 4;
+#ifdef ONE_CHANNEL_CONF_INIT
+        mem_conf.dmx_channel_quantity = 1;
+        mem_conf.max_current_channels[0] = 235;
+        mem_conf.max_current_channels[1] = 235;
+        mem_conf.max_current_channels[2] = 235;
+        mem_conf.max_current_channels[3] = 235;	
+#else
+        mem_conf.dmx_channel_quantity = 4;	
         mem_conf.max_current_channels[0] = 255;
         mem_conf.max_current_channels[1] = 255;
         mem_conf.max_current_channels[2] = 255;
         mem_conf.max_current_channels[3] = 255;
+#endif
         mem_conf.program_type = AUTODETECT_MODE;    //force mem save        
         mem_conf.temp_prot_deg = 70;    //70 degrees
         mem_conf.temp_prot = TEMP_IN_70;    //70 degrees

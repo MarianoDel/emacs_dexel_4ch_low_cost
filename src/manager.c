@@ -63,8 +63,8 @@ extern void (* ptFTT ) (void);
 extern volatile unsigned short adc_ch [];
 
 // -- Externals for the modes
-unsigned char mode_state = 0;
-volatile unsigned short mode_effect_timer = 0;
+// unsigned char mode_state = 0;
+// volatile unsigned short mode_effect_timer = 0;
 
 extern volatile unsigned short timer_standby;
 // -- Externals for the menues
@@ -210,6 +210,12 @@ void Manager (parameters_typedef * pmem)
 
             if (resp == resp_change)
             {
+		if (pmem->dmx_channel_quantity == 1)
+		{
+		    dmx_local_data[1] = dmx_local_data[0];
+		    dmx_local_data[2] = dmx_local_data[0];
+		    dmx_local_data[3] = dmx_local_data[0];		    
+		}
                 FiltersAndOffsets_Channels_to_Backup (dmx_local_data);
             }
 
@@ -257,6 +263,12 @@ void Manager (parameters_typedef * pmem)
             if ((resp == resp_change) ||
                 (resp == resp_need_to_save))
             {
+		if (pmem->dmx_channel_quantity == 1)
+		{
+		    dmx_local_data[1] = dmx_local_data[0];
+		    dmx_local_data[2] = dmx_local_data[0];
+		    dmx_local_data[3] = dmx_local_data[0];		    
+		}
                 // FiltersAndOffsets_Channels_to_Backup (&(pmem->fixed_channels[0]));
                 FiltersAndOffsets_Channels_to_Backup (dmx_local_data);                
             }

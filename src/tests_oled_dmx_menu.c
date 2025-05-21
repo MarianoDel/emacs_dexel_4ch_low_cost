@@ -59,7 +59,8 @@ gboolean Test_Main_Loop (gpointer user_data)
 
         Dmx_Menu_Reset ();
         mem.dmx_first_channel = 1;
-        mem.dmx_channel_quantity = 3;
+        // mem.dmx_channel_quantity = 3;
+        mem.dmx_channel_quantity = 1;	
         printf("testing with %d channels\n", mem.dmx_channel_quantity);        
         timer_standby = 1300;
     }
@@ -147,7 +148,7 @@ gboolean Test_Timeouts_Loop_1000ms (gpointer user_data)
 
 // Module Implementation of buttons functions
 // only two switches, answers always up
-void cw_button_function (void)
+void button1_function (void)
 {
     g_mutex_lock (&mutex);
     switch_actions = selection_up;
@@ -155,7 +156,7 @@ void cw_button_function (void)
 }
 
 
-void ccw_button_function (void)
+void button2_function (void)
 {
     g_mutex_lock (&mutex);
     switch_actions = selection_up;
@@ -163,7 +164,7 @@ void ccw_button_function (void)
 }
 
 
-void set_button_function (void)
+void button3_function (void)
 {
     g_mutex_lock (&mutex);
     switch_actions = selection_enter;
@@ -180,6 +181,16 @@ unsigned char Manager_Probe_Temp_Get (void)
 unsigned char Temp_TempToDegreesExtended (unsigned short temp)
 {
     return 30;
+}
+
+
+void Check_S1_Accel_Fast (void)
+{
+}
+
+
+void Check_S1_Accel_Slow (void)
+{
 }
 
 

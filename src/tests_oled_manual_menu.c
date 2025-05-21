@@ -53,7 +53,9 @@ gboolean Test_Main_Loop (gpointer user_data)
         mem.fixed_channels[1] = 255;
         mem.fixed_channels[2] = 0;
         mem.fixed_channels[3] = 0;
-        mem.dmx_channel_quantity = 4;
+        // mem.dmx_channel_quantity = 4;
+        // mem.dmx_channel_quantity = 3;
+        mem.dmx_channel_quantity = 1;
         mem.manual_inner_mode = 0;
         mem.manual_inner_speed = 3;
         

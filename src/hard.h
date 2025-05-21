@@ -19,7 +19,8 @@
 
 
 //----------- Firmware Version -------------------
-#define FIRMWARE_VERSION_1_0
+#define FIRMWARE_VERSION_1_1    // one channel added, all channels equal to one
+// #define FIRMWARE_VERSION_1_0    // first production
 
 
 //-------- Clock Frequency ------------------------------------
@@ -31,6 +32,7 @@
 
 // #define USE_CTROL_FAN_ALWAYS_ON    //fan always
 
+#define ONE_CHANNEL_CONF_INIT    // init with one channel default for firm1.1
 // --- PWM Frequency --- //
 // #define USE_FREQ_16KHZ    //48MHz / 3000pts
 // #define USE_FREQ_12KHZ    //48MHz / 4000pts
@@ -53,8 +55,8 @@
 #error "define hardware version on hard.h"
 #endif
 
-#if (!defined FIRMWARE_VERSION_1_0) && \
-    (!defined FIRMWARE_VERSION_2_0)
+#if (!defined FIRMWARE_VERSION_1_1) && \
+    (!defined FIRMWARE_VERSION_1_0)
 #error "define firmware version on hard.h"
 #endif
 

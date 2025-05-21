@@ -246,7 +246,11 @@ resp_t Main_Menu (parameters_typedef * mem, sw_actions_t actions)
         {
             Check_S2_Accel_Slow();            
             resp = resp_continue;
-            main_menu_state++;
+#ifdef ONE_CHANNEL_CONF_INIT
+            main_menu_state = MAIN_MENU_SHOW_VERSION;
+#else
+            main_menu_state++;	    
+#endif
         }
         break;
 
@@ -279,9 +283,12 @@ resp_t Main_Menu (parameters_typedef * mem, sw_actions_t actions)
         
         if (resp == resp_up)
         {
+	    // 1, 3 or 4 channels
             Check_S2_Accel_Fast();
             unsigned char * pch = &(mem->dmx_channel_quantity);
-            if (*pch < 4)
+	    if (*pch == 1)
+		*pch = 3;
+	    else if (*pch < 4)
                 *pch += 1;
 
             main_menu_state--;
@@ -290,9 +297,12 @@ resp_t Main_Menu (parameters_typedef * mem, sw_actions_t actions)
 
         if (resp == resp_dwn)
         {
+	    // 1, 3 or 4 channels	    
             Check_S2_Accel_Fast();            
             unsigned char * pch = &(mem->dmx_channel_quantity);
-            if (*pch > 3)
+            if (*pch == 3)
+		*pch = 1;
+	    else if (*pch > 3)		
                 *pch -= 1;
 
             main_menu_state--;            

@@ -116,8 +116,14 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
 
         SCREEN_Text2_BlankLine1();
         SCREEN_Text2_BlankLine2();
-        
-        if (mem->manual_inner_mode == 2)
+
+	if (mem->dmx_channel_quantity == 1)
+	{
+            SCREEN_Text2_Line1("  Fixed   ");
+            SCREEN_Text2_Line2("  Colors  ");
+	    mem->manual_inner_mode = 0;
+	}
+        else if (mem->manual_inner_mode == 2)
         {
             SCREEN_Text2_Line1("  Fading  ");
             SCREEN_Text2_Line2("  Colors  ");            
@@ -241,23 +247,35 @@ resp_t Manual_Menu_Fixed_Colors (parameters_typedef * mem,
         SCREEN_Text2_BlankLine1();
         SCREEN_Text2_BlankLine2();
 
-        sprintf(s_temp, "R%3d  G%3d",
-                *((mem->fixed_channels) + 0),
-                *((mem->fixed_channels) + 1));
-        SCREEN_Text2_Line1(s_temp);
+	if (mem->dmx_channel_quantity == 1)
+	{
+	    sprintf(s_temp, "DIM   %3d ",
+		    *((mem->fixed_channels) + 0));
+	    SCREEN_Text2_Line1(s_temp);
+	}
+	else if (mem->dmx_channel_quantity == 3)
+	{
+	    sprintf(s_temp, "R%3d  G%3d",
+		    *((mem->fixed_channels) + 0),
+		    *((mem->fixed_channels) + 1));
+	    SCREEN_Text2_Line1(s_temp);
 
-        if (mem->dmx_channel_quantity == 4)
-        {
+            sprintf(s_temp, "B%3d",
+                    *((mem->fixed_channels) + 2));
+	    SCREEN_Text2_Line2(s_temp);
+	}
+	else    // 4 channels
+	{
+	    sprintf(s_temp, "R%3d  G%3d",
+		    *((mem->fixed_channels) + 0),
+		    *((mem->fixed_channels) + 1));
+	    SCREEN_Text2_Line1(s_temp);
+
             sprintf(s_temp, "B%3d  W%3d",
                     *((mem->fixed_channels) + 2),
                     *((mem->fixed_channels) + 3));
-        }
-        else
-        {
-            sprintf(s_temp, "B%3d",
-                    *((mem->fixed_channels) + 2));
-        }
-        SCREEN_Text2_Line2(s_temp);            
+	    SCREEN_Text2_Line2(s_temp);	    
+	}
 
         for (int i = 0; i < 4; i++)
             dmx_local_data[i] = mem->fixed_channels[i];
@@ -331,17 +349,32 @@ resp_t Manual_Menu_Fixed_Colors (parameters_typedef * mem,
         
     case FIXED_CHANGE_RED:
         SCREEN_Text2_BlankLine1();
-        if (manual_menu_showing)
-        {
-            sprintf(s_temp, "R%3d  G%3d",
-                    *((mem->fixed_channels) + 0),
-                    *((mem->fixed_channels) + 1));
-        }
-        else
-        {
-            sprintf(s_temp, "R     G%3d",
-                    *((mem->fixed_channels) + 1));
-        }
+	if (mem->dmx_channel_quantity == 1)
+	{
+	    if (manual_menu_showing)
+	    {
+		sprintf(s_temp, "DIM   %3d ",
+			*((mem->fixed_channels) + 0));
+	    }
+	    else
+	    {
+		strcpy(s_temp, "DIM       ");
+	    }
+	}
+	else
+	{
+	    if (manual_menu_showing)
+	    {
+		sprintf(s_temp, "R%3d  G%3d",
+			*((mem->fixed_channels) + 0),
+			*((mem->fixed_channels) + 1));
+	    }
+	    else
+	    {
+		sprintf(s_temp, "R     G%3d",
+			*((mem->fixed_channels) + 1));
+	    }
+	}
         SCREEN_Text2_Line1(s_temp);
 
         *need_display_update = 1;
@@ -392,8 +425,18 @@ resp_t Manual_Menu_Fixed_Colors (parameters_typedef * mem,
                 }
                 else
                 {
-                    manual_menu_out_cnt = OPT_CNT_NEXT;
-                    inner_state++;
+                    if (mem->dmx_channel_quantity != 1)
+                    {
+                        manual_menu_out_cnt = OPT_CNT_NEXT;
+                        inner_state++;
+                    }
+                    else
+                    {
+                        Check_S1_Accel_Slow();
+                        Check_S2_Accel_Slow();
+                        inner_state = FIXED_SHOW_FIRST;
+                        resp = resp_need_to_save;
+                    }
                 }
             }
             else

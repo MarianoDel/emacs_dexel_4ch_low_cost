@@ -185,10 +185,10 @@ char * HARD_GetHardwareVersion (void)
     return hardware_version;
 }
 
-#if defined FIRMWARE_VERSION_1_0
+#if defined FIRMWARE_VERSION_1_1
+char software_version [] = {"Soft 1.1"};
+#elif defined FIRMWARE_VERSION_1_0
 char software_version [] = {"Soft 1.0"};
-#elif defined FIRMWARE_VERSION_2_0
-char software_version [] = {"Soft 2.0"};
 #else
 #error "No soft version selected on hard.c"
 #endif

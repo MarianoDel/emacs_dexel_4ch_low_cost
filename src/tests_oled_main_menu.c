@@ -52,6 +52,7 @@ gboolean Test_Main_Loop (gpointer user_data)
         mem.max_current_channels[2] = 120;
         mem.max_current_channels[3] = 64;
 
+	mem.dmx_channel_quantity = 1;
         mem.temp_prot_deg = 30;
         timer_standby = 1300;
     }
@@ -129,7 +130,7 @@ gboolean Test_Timeouts_Loop_1000ms (gpointer user_data)
 
 // Module Implementation of buttons functions
 // only two switches, answers always up
-void cw_button_function (void)
+void button1_function (void)
 {
     g_mutex_lock (&mutex);
     switch_actions = selection_up;
@@ -137,15 +138,15 @@ void cw_button_function (void)
 }
 
 
-void ccw_button_function (void)
+void button2_function (void)
 {
     g_mutex_lock (&mutex);
-    switch_actions = selection_up;
+    switch_actions = selection_dwn;
     g_mutex_unlock (&mutex);
 }
 
 
-void set_button_function (void)
+void button3_function (void)
 {
     g_mutex_lock (&mutex);
     switch_actions = selection_enter;
@@ -164,6 +165,16 @@ char * HARD_GetHardwareVersion (void)
 char * HARD_GetSoftwareVersion (void)
 {
     return software_version;
+}
+
+
+void Check_S1_Accel_Fast (void)
+{
+}
+
+
+void Check_S1_Accel_Slow (void)
+{
 }
 
 

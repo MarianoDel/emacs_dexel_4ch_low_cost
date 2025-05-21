@@ -107,24 +107,36 @@ resp_t Dmx_Menu (parameters_typedef * mem, sw_actions_t actions)
         SCREEN_Text2_BlankLine1();
         SCREEN_Text2_BlankLine2();
 
-        sprintf(s_temp, "R%3d  G%3d",
-                dmx_local_data[0],
-                dmx_local_data[1]);
-        SCREEN_Text2_Line1(s_temp);
+	if (mem->dmx_channel_quantity == 1)
+	{
+	    sprintf(s_temp, "DMX   %3d ",
+		    dmx_local_data[0]);
+	    SCREEN_Text2_Line1(s_temp);
+	}
+	else if (mem->dmx_channel_quantity == 3)
+	{
+	    sprintf(s_temp, "R%3d  G%3d",
+		    dmx_local_data[0],
+		    dmx_local_data[1]);
+	    SCREEN_Text2_Line1(s_temp);
+	    
+            sprintf(s_temp, "B%3d",
+                    dmx_local_data[2]);
+	    SCREEN_Text2_Line2(s_temp);
+	}
+	else    // 4 channels
+	{
+	    sprintf(s_temp, "R%3d  G%3d",
+		    dmx_local_data[0],
+		    dmx_local_data[1]);
+	    SCREEN_Text2_Line1(s_temp);
 
-        if (mem->dmx_channel_quantity == 4)
-        {
             sprintf(s_temp, "B%3d  W%3d",
                     dmx_local_data[2],
                     dmx_local_data[3]);
-        }
-        else
-        {
-            sprintf(s_temp, "B%3d",
-                    dmx_local_data[2]);
-        }
-        SCREEN_Text2_Line2(s_temp);
-        
+	    SCREEN_Text2_Line2(s_temp);	    
+	}
+	        
         dmx_need_display_update = 1;
         // resp = resp_change;    //first colors update
         dmx_state++;
