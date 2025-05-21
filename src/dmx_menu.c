@@ -109,9 +109,12 @@ resp_t Dmx_Menu (parameters_typedef * mem, sw_actions_t actions)
 
 	if (mem->dmx_channel_quantity == 1)
 	{
-	    sprintf(s_temp, "DMX   %3d ",
+            sprintf(s_temp, "Addr:  %03d", mem->dmx_first_channel);
+            SCREEN_Text2_Line1(s_temp);            
+
+	    sprintf(s_temp, "Dmx:   %3d",
 		    dmx_local_data[0]);
-	    SCREEN_Text2_Line1(s_temp);
+	    SCREEN_Text2_Line2(s_temp);
 	}
 	else if (mem->dmx_channel_quantity == 3)
 	{
@@ -214,7 +217,7 @@ resp_t Dmx_Menu (parameters_typedef * mem, sw_actions_t actions)
         SCREEN_Text2_BlankLine1();
         if (dmx_menu_showing)
         {
-            sprintf(s_temp, "Addr:  %3d", mem->dmx_first_channel);
+            sprintf(s_temp, "Addr:  %03d", mem->dmx_first_channel);
             SCREEN_Text2_Line1(s_temp);            
         }
         else
