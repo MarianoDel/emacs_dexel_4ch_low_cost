@@ -188,10 +188,10 @@ int main(void)
         mem_conf.dmx_first_channel = 1;
 #ifdef ONE_CHANNEL_CONF_INIT
         mem_conf.dmx_channel_quantity = 1;
-        mem_conf.max_current_channels[0] = 235;
-        mem_conf.max_current_channels[1] = 235;
-        mem_conf.max_current_channels[2] = 235;
-        mem_conf.max_current_channels[3] = 235;	
+        mem_conf.max_current_channels[0] = 230;
+        mem_conf.max_current_channels[1] = 230;
+        mem_conf.max_current_channels[2] = 230;
+        mem_conf.max_current_channels[3] = 230;	
 #else
         mem_conf.dmx_channel_quantity = 4;	
         mem_conf.max_current_channels[0] = 255;

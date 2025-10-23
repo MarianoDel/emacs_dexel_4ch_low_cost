@@ -84,15 +84,121 @@ void Wait_ms (unsigned short wait)
     while (wait_ms_var);
 }
 
-//-------------------------------------------//
-// @brief  TIM configure.
-// @param  None
-// @retval None
-//------------------------------------------//
+////////////////////
+// TIM1 Functions //
+////////////////////
+void TIM_1_Init_Ch2n_Ch3n_Slave (void)
+{
+    if (!RCC_TIM1_CLK)
+        RCC_TIM1_CLK_ON;
+
+    //Configuracion del timer.
+    TIM1->CR1 = 0x00;		//clk int / 1; upcounting
+    TIM1->CR2 = 0x00;
+
+    //Reset mode, trigger with TI2
+    TIM1->SMCR |= TIM_SMCR_SMS_2 |
+        TIM_SMCR_TS_2 | TIM_SMCR_TS_1;
+    
+    TIM1->CCMR1 = 0x6000;    // CH2 pwm mode 2
+    TIM1->CCMR2 = 0x0060;    // CH3 pwm mode 2
+    TIM1->CCER |= TIM_CCER_CC3NE | TIM_CCER_CC2NE;    // CH3N CH2N enable on pin
+
+    unsigned int new_arr = ((255 * 255) >> 4) - 1;    // (max dmx * max current) / 16 - 1
+    TIM1->ARR = new_arr;
+    TIM1->CNT = 0;
+
+#if (defined USE_FREQ_16KHZ) || (defined USE_FREQ_12KHZ)
+    TIM1->PSC = 0;
+#elif (defined USE_FREQ_8KHZ) || (defined USE_FREQ_6KHZ)
+    TIM1->PSC = 1;
+#elif defined USE_FREQ_4KHZ
+    TIM1->PSC = 2;
+#elif defined USE_FREQ_4_8KHZ
+    TIM1->PSC = 9;
+#else
+#error "set freq on hard.h"
+#endif
+
+    TIM1->BDTR |= TIM_BDTR_MOE;
+    //Alternative pin config.
+    //Alternate Fuction
+    unsigned int temp;
+    // temp = GPIOA->AFR[0];
+    // temp &= 0x00FFFFFF;
+    // temp |= 0x11000000;    // PA7 -> AF1 PA6 -> AF1
+    // GPIOA->AFR[0] = temp;
+
+    temp = GPIOB->AFR[0];
+    temp &= 0xFFFFFF00;
+    temp |= 0x00000022;    // PB1 -> AF2 (TIM1_CH3N) ;; PB0 -> AF2 (TIM1_CH2N)
+    GPIOB->AFR[0] = temp;
+
+    // Enable timer ver UDIS
+    //TIM1->DIER |= TIM_DIER_UIE;
+    TIM1->CR1 |= TIM_CR1_CEN;
+
+}
+
+////////////////////
+// TIM3 Functions //
+////////////////////
 void TIM3_IRQHandler (void)	//1 ms
 {
     if (TIM3->SR & 0x01)	//bajo el flag
         TIM3->SR = 0x00;
+}
+
+
+void TIM_3_Init_Ch1_Ch2_Sync_Master (void)
+{
+    if (!RCC_TIM3_CLK)
+        RCC_TIM3_CLK_ON;
+
+    //Configuracion del timer.
+    TIM3->CR1 = 0x00;		//clk int / 1; upcounting
+    TIM3->CR2 |= TIM_CR2_MMS_2 | TIM_CR2_MMS_1;		// OC3REF -> TRG0
+
+    TIM3->CCMR1 = 0x6060;    // CH2 CH1 pwm mode 2
+    TIM3->CCMR2 = 0x0000;
+    TIM3->CCER |= TIM_CCER_CC2E | TIM_CCER_CC1E;    // CH2 CH1 enable on pin
+
+    unsigned int new_arr = ((255 * 255) >> 4) - 1;    // (max dmx * max current) / 16 - 1
+    TIM3->ARR = new_arr;
+    TIM3->CNT = 0;
+
+#if (defined USE_FREQ_16KHZ) || (defined USE_FREQ_12KHZ)
+    TIM3->PSC = 0;
+#elif (defined USE_FREQ_8KHZ) || (defined USE_FREQ_6KHZ)
+    TIM3->PSC = 1;
+#elif defined USE_FREQ_4KHZ
+    TIM3->PSC = 2;
+#elif defined USE_FREQ_4_8KHZ
+    TIM3->PSC = 9;
+#else
+#error "set freq on hard.h"
+#endif
+
+    // Phase shift for TIM1 on OCREF 50%
+    TIM3->CCR3 = (TIM3->ARR >> 1);
+    
+    //Alternative pin config.
+    //Alternate Fuction
+    unsigned int temp;
+    temp = GPIOA->AFR[0];
+    temp &= 0x00FFFFFF;
+    temp |= 0x11000000;    // PA7 -> AF1 PA6 -> AF1
+    GPIOA->AFR[0] = temp;
+
+    // temp = GPIOB->AFR[0];
+    // temp &= 0xFFFFFF00;
+    // temp |= 0x00000011;    // PB1 -> AF1 PB0 -> AF1
+    // GPIOB->AFR[0] = temp;
+
+    // Enable timer ver UDIS
+    //TIM3->DIER |= TIM_DIER_UIE;
+    TIM3->CR1 |= TIM_CR1_CEN;
+
 }
 
 
@@ -143,6 +249,7 @@ void TIM_3_Init (void)
     TIM3->CR1 |= TIM_CR1_CEN;
 
 }
+
 
 #ifdef STM32G070xx
 void TIM_6_Init (void)

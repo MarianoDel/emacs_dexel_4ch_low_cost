@@ -40,7 +40,7 @@
 void PWMChannelsReset (void);
 unsigned short PWM_Map_From_Dmx (unsigned char);
 void PWM_Set_PwrCtrl (unsigned char *, unsigned char, unsigned short);
-unsigned short PWM_Map_From_Dmx_Short (unsigned short adj_dmx);
+unsigned short PWM_Map_From_Dmx_Short (unsigned short adj_dmx, unsigned char maxc);
 
 
 #endif    /* __PWM_H_ */

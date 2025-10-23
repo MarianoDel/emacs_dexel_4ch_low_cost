@@ -35,19 +35,37 @@ void PWMChannelsReset (void)
 }
 
 
-// 255 * 255 or 255 * 128
-unsigned short PWM_Map_From_Dmx_Short (unsigned short adj_val)
+// dmx or manual 0-255
+// max current 0-255
+// 255 * 255
+unsigned short PWM_Map_From_Dmx_Short (unsigned short adj_val, unsigned char maxc)
 {
     unsigned int pwm = 0;
 
+    // adj_val == 0 no dim nor dmx
+    // adj_val <= max_current just min not dimming start
     if (adj_val)
     {
-        pwm = adj_val >> 4;
-        // if (pwm < 29)    // original
-        //     pwm = 29;
-        
-        if (pwm < 38)
-            pwm = 38;
+	if (adj_val <= maxc)
+	{
+	    // first dim or dmx point
+#ifdef USE_FREQ_16KHZ
+	    pwm = 64;    // 1us 2.13mA @ 16KHz
+#endif
+#ifdef USE_FREQ_8KHZ
+	    pwm = 38;    // 1.1us 2.13mA @ 8KHz	
+#endif
+	}
+	else
+	{
+	    // the others dim or dmx points
+#ifdef USE_FREQ_16KHZ
+	    pwm = 64 + ((adj_val - maxc) >> 4);
+#endif
+#ifdef USE_FREQ_8KHZ
+            pwm = 38 + ((adj_val - maxc) >> 4);	
+#endif
+	}
     }
 
     if (pwm > 4095)

@@ -141,14 +141,16 @@ void FiltersAndOffsets_Calc_SM (void)
         // channel 1
         ch_pwm = MA8_U16Circular (
             &st_sp1,
-            PWM_Map_From_Dmx_Short(*(limit_output + 0))
+            PWM_Map_From_Dmx_Short(*(limit_output + 0),
+		mem_conf.max_current_channels[0])
             );
         PWM_Update_CH1(ch_pwm);
 
         // channel 2
         ch_pwm = MA8_U16Circular (
             &st_sp2,
-            PWM_Map_From_Dmx_Short(*(limit_output + 1))
+            PWM_Map_From_Dmx_Short(*(limit_output + 1),
+		mem_conf.max_current_channels[1])
             );
         PWM_Update_CH2(ch_pwm);
 #endif
@@ -156,14 +158,16 @@ void FiltersAndOffsets_Calc_SM (void)
         // channel 1
         ch_pwm = MA16_U16Circular (
             &st_sp1,
-            PWM_Map_From_Dmx_Short(*(limit_output + 0))
+            PWM_Map_From_Dmx_Short(*(limit_output + 0),
+		mem_conf.max_current_channels[0])
             );
         PWM_Update_CH1(ch_pwm);
 
         // channel 2
         ch_pwm = MA16_U16Circular (
             &st_sp2,
-            PWM_Map_From_Dmx_Short(*(limit_output + 1))
+            PWM_Map_From_Dmx_Short(*(limit_output + 1),
+		mem_conf.max_current_channels[1])
             );
         PWM_Update_CH2(ch_pwm);
 #endif
@@ -171,14 +175,16 @@ void FiltersAndOffsets_Calc_SM (void)
         // channel 1
         ch_pwm = MA32_U16Circular (
             &st_sp1,
-            PWM_Map_From_Dmx_Short(*(limit_output + 0))
+            PWM_Map_From_Dmx_Short(*(limit_output + 0),
+		mem_conf.max_current_channels[0])
             );
         PWM_Update_CH1(ch_pwm);
 
         // channel 2
         ch_pwm = MA32_U16Circular (
             &st_sp2,
-            PWM_Map_From_Dmx_Short(*(limit_output + 1))
+            PWM_Map_From_Dmx_Short(*(limit_output + 1),
+		mem_conf.max_current_channels[1])
             );
         PWM_Update_CH2(ch_pwm);
 #endif
@@ -190,14 +196,16 @@ void FiltersAndOffsets_Calc_SM (void)
         // channel 3
         ch_pwm = MA8_U16Circular (
             &st_sp3,
-            PWM_Map_From_Dmx_Short(*(limit_output + 2))
+            PWM_Map_From_Dmx_Short(*(limit_output + 2),
+		mem_conf.max_current_channels[2])
             );
         PWM_Update_CH3(ch_pwm);
 
         // channel 4
         ch_pwm = MA8_U16Circular (
             &st_sp4,
-            PWM_Map_From_Dmx_Short(*(limit_output + 3))
+            PWM_Map_From_Dmx_Short(*(limit_output + 3),
+		mem_conf.max_current_channels[3])
             );
         PWM_Update_CH4(ch_pwm);
 #endif
@@ -205,14 +213,16 @@ void FiltersAndOffsets_Calc_SM (void)
         // channel 3
         ch_pwm = MA16_U16Circular (
             &st_sp3,
-            PWM_Map_From_Dmx_Short(*(limit_output + 2))
+            PWM_Map_From_Dmx_Short(*(limit_output + 2),
+		mem_conf.max_current_channels[2])
             );
         PWM_Update_CH3(ch_pwm);
 
         // channel 4
         ch_pwm = MA16_U16Circular (
             &st_sp4,
-            PWM_Map_From_Dmx_Short(*(limit_output + 3))
+            PWM_Map_From_Dmx_Short(*(limit_output + 3),
+		mem_conf.max_current_channels[3])
             );
         PWM_Update_CH4(ch_pwm);
 #endif
@@ -220,14 +230,16 @@ void FiltersAndOffsets_Calc_SM (void)
         // channel 3
         ch_pwm = MA32_U16Circular (
             &st_sp3,
-            PWM_Map_From_Dmx_Short(*(limit_output + 2))
+            PWM_Map_From_Dmx_Short(*(limit_output + 2),
+		mem_conf.max_current_channels[2])
             );
         PWM_Update_CH3(ch_pwm);
 
         // channel 4
         ch_pwm = MA32_U16Circular (
             &st_sp4,
-            PWM_Map_From_Dmx_Short(*(limit_output + 3))
+            PWM_Map_From_Dmx_Short(*(limit_output + 3),
+		mem_conf.max_current_channels[3])
             );
         PWM_Update_CH4(ch_pwm);
 #endif

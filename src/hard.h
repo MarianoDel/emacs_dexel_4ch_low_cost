@@ -19,6 +19,7 @@
 
 
 //----------- Firmware Version -------------------
+// #define FIRMWARE_VERSION_1_2    // ch1 ch2 on phase ch3 ch4 out of phase
 #define FIRMWARE_VERSION_1_1    // one channel added, all channels equal to one
 // #define FIRMWARE_VERSION_1_0    // first production
 
@@ -34,12 +35,12 @@
 
 #define ONE_CHANNEL_CONF_INIT    // init with one channel default for firm1.1
 // --- PWM Frequency --- //
-// #define USE_FREQ_16KHZ    //48MHz / 3000pts
-// #define USE_FREQ_12KHZ    //48MHz / 4000pts
-#define USE_FREQ_8KHZ    //24MHz / 3000pts
-// #define USE_FREQ_6KHZ    //24MHz / 4000pts
-// #define USE_FREQ_4KHZ    //16MHz / 4000pts
-// #define USE_FREQ_4_8KHZ    //4.8MHz / 1000pts
+#define USE_FREQ_16KHZ
+// #define USE_FREQ_12KHZ
+// #define USE_FREQ_8KHZ
+// #define USE_FREQ_6KHZ
+// #define USE_FREQ_4KHZ
+// #define USE_FREQ_4_8KHZ
 
 // --- Usart2 Modes --- //
 #define USART2_DEBUG_MODE
@@ -55,7 +56,8 @@
 #error "define hardware version on hard.h"
 #endif
 
-#if (!defined FIRMWARE_VERSION_1_1) && \
+#if (!defined FIRMWARE_VERSION_1_2) && \
+    (!defined FIRMWARE_VERSION_1_1) && \
     (!defined FIRMWARE_VERSION_1_0)
 #error "define firmware version on hard.h"
 #endif
