@@ -16,5 +16,9 @@ void button1_function (void);
 void button2_function (void);
 void button3_function (void);
 
+void toggled1_function (void);
+void toggled2_function (void);
+void toggled3_function (void);
+
 
 //--- end of file ---//

@@ -4,7 +4,7 @@
 // ## @Editor: Emacs - ggtags
 // ## @TAGS:   Global
 // ##
-// #### MANAGER.C ##########################################
+// #### MANAGER_2CH.C ######################################
 //----------------------------------------------------------
 
 // Includes --------------------------------------------------------------------
@@ -27,8 +27,6 @@
 #include "dmx_menu.h"
 #include "manual_menu.h"
 #include "main_menu.h"
-#include "dmx_mode_2ch.h"
-#include "manual_mode_2ch.h"
 // #include "hard.h"
 
 #include "temperatures.h"
@@ -63,12 +61,27 @@ extern volatile unsigned char dmx_receive_flag;
 extern void (* ptFTT ) (void);
 
 extern volatile unsigned short adc_ch [];
+
+// -- Externals for the modes
+// unsigned char mode_state = 0;
+// volatile unsigned short mode_effect_timer = 0;
+
 extern volatile unsigned short timer_standby;
+// -- Externals for the menues
+// unsigned char menu_state = 0;
+// unsigned char menu_selected = 0;
+// unsigned char menu_need_display_update = 0;
+// unsigned char menu_selection_show = 0;
+// volatile unsigned short menu_menu_timer = 0;
+// // options_menu_st mem_options;
+// unsigned char menu_counter_out = 0;
+
+// extern volatile unsigned short dac_chnls [];
+// extern volatile unsigned char pwm_chnls[];
 
 // -- for temp sense
 extern ma16_u16_data_obj_t temp_filter;
 extern unsigned char dmx_local_data [];
-
 
 // Globals ---------------------------------------------------------------------
 manager_states_e mngr_state = MNGR_INIT;
@@ -158,18 +171,8 @@ void Manager (parameters_typedef * pmem)
         dmx_buff_data[1] = 0;
         dmx_buff_data[2] = 0;
 
-	if (pmem->dmx_channel_quantity == 2)
-	{
-	    // Mode Timeout enable
-	    ptFTT = &Dmx_Mode_2Ch_UpdateTimers;
-	    Dmx_Mode_2Ch_Reset ();
-	}
-	else    // asumme 4 channels
-	{
-	    // Mode Timeout enable
-	    ptFTT = &Dmx_Menu_Timeouts;
-	    Dmx_Menu_Reset ();
-	}
+        // Mode Timeout enable
+        ptFTT = &Dmx_Menu_Timeouts;
 
         // packet reception enable
         DMX_EnableRx();
@@ -177,6 +180,7 @@ void Manager (parameters_typedef * pmem)
         // enable pwm outputs
         FiltersAndOffsets_Enable_Outputs ();
 
+        Dmx_Menu_Reset ();
         mngr_state = MNGR_IN_DMX_MODE;
         packet_cnt = 0;    // reset packet counter for autodetection
         break;
@@ -185,30 +189,13 @@ void Manager (parameters_typedef * pmem)
         // packet reception disable, check for colors
         DMX_DisableRx();
 
-	// Check kind of program, based on channels used
-	if (pmem->dmx_channel_quantity == 1)
-	{
-	    // for now same as four ch
-	    // Mode Timeout enable
-	    ptFTT = &Manual_Menu_Timeouts;
-	    Manual_Menu_Reset ();
-	}
-	else if (pmem->dmx_channel_quantity == 2)
-	{
-	    // Mode Timeout enable
-	    ptFTT = &ManualMode_2Ch_UpdateTimers;
-	    ManualMode_2Ch_Reset ();	    
-	}
-	else    // asumme 4 channels
-	{
-	    // Mode Timeout enable
-	    ptFTT = &Manual_Menu_Timeouts;
-	    Manual_Menu_Reset ();	    
-	}
+        // Mode Timeout enable
+        ptFTT = &Manual_Menu_Timeouts;
 
         // enable pwm outputs
         FiltersAndOffsets_Enable_Outputs ();
-
+        
+        Manual_Menu_Reset ();
         mngr_state = MNGR_IN_MANUAL_MODE;
         packet_cnt = 0;    // reset packet counter for autodetection
         break;
@@ -219,69 +206,19 @@ void Manager (parameters_typedef * pmem)
 
         if (action != selection_back)
         {            
-	    // Check kind of program, based on channels used
-	    if (pmem->dmx_channel_quantity == 1)
-	    {
-		// for now same as four ch
-		resp = Dmx_Menu (pmem, action);
+            resp = Dmx_Menu (pmem, action);
 
-		if (resp == resp_change)
+            if (resp == resp_change)
+            {
+		if (pmem->dmx_channel_quantity == 1)
 		{
 		    dmx_local_data[1] = dmx_local_data[0];
 		    dmx_local_data[2] = dmx_local_data[0];
 		    dmx_local_data[3] = dmx_local_data[0];		    
-		    FiltersAndOffsets_Channels_to_Backup (dmx_local_data);
 		}
-	    }
-	    else if (pmem->dmx_channel_quantity == 2)
-	    {
-		resp = Dmx_Mode_2Ch (pmem, action);		
-		if ((resp == resp_change) ||
-		    (resp == resp_need_to_save))
-		{
-		    unsigned short calc = 0;
-		    unsigned char bright = 0;
-		    unsigned char temp0 = 0;
-		    unsigned char temp1 = 0;
+                FiltersAndOffsets_Channels_to_Backup (dmx_local_data);
+            }
 
-		    // backup and bright temp calcs
-		    // ch0 the bright ch1 the temp
-		    bright = *(dmx_local_data + 0);
-		    temp0 = 255 - *(dmx_local_data + 1);
-		    temp1 = 255 - temp0;
-
-		    if (bright)
-		    {
-			calc = temp0 * bright + 1;
-			calc >>= 8;
-			dmx_local_data[0] = (unsigned char) calc;
-			dmx_local_data[1] = dmx_local_data[0];
-
-			calc = temp1 * bright + 1;
-			calc >>= 8;
-			dmx_local_data[2] = (unsigned char) calc;
-			dmx_local_data[3] = dmx_local_data[2];
-		    }
-		    else
-		    {
-			dmx_local_data[0] = 0;
-			dmx_local_data[1] = 0;
-			dmx_local_data[2] = 0;
-			dmx_local_data[3] = 0;			
-		    }
-		    FiltersAndOffsets_Channels_to_Backup (dmx_local_data);                
-		}
-	    }
-	    else    // asumme 4 channels
-	    {
-		resp = Dmx_Menu (pmem, action);
-
-		if (resp == resp_change)
-		    FiltersAndOffsets_Channels_to_Backup (dmx_local_data);
-
-	    }
-
-	    // common to all modes
             if (resp == resp_need_to_save)
             {
                 need_to_save_timer = 10000;
@@ -321,43 +258,21 @@ void Manager (parameters_typedef * pmem)
         
         if (action != selection_back)
         {
-	    // Check kind of program, based on channels used
-	    if (pmem->dmx_channel_quantity == 1)
-	    {
-		// for now same as four ch
-		resp = Manual_Menu (pmem, action);		
-		if ((resp == resp_change) ||
-		    (resp == resp_need_to_save))
-		{
-		    dmx_local_data[1] = dmx_local_data[0];
-		    dmx_local_data[2] = dmx_local_data[0];
-		    dmx_local_data[3] = dmx_local_data[0];		    
-		    FiltersAndOffsets_Channels_to_Backup (dmx_local_data);                
-		}
-	    }
-	    else if (pmem->dmx_channel_quantity == 2)
-	    {
-		resp = ManualMode_2Ch (pmem, action);		
-		if ((resp == resp_change) ||
-		    (resp == resp_need_to_save))
-		{
-		    dmx_local_data[1] = dmx_local_data[0];
-		    dmx_local_data[2] = dmx_local_data[0];
-		    dmx_local_data[3] = dmx_local_data[0];		    
-		    FiltersAndOffsets_Channels_to_Backup (dmx_local_data);                
-		}
-	    }
-	    else    // asumme 4 channels
-	    {
-		resp = Manual_Menu (pmem, action);
-		if ((resp == resp_change) ||
-		    (resp == resp_need_to_save))
-		{
-		    FiltersAndOffsets_Channels_to_Backup (dmx_local_data);                
-		}
-	    }
+            resp = Manual_Menu (pmem, action);
 
-	    // common to all modes
+            if ((resp == resp_change) ||
+                (resp == resp_need_to_save))
+            {
+		if (pmem->dmx_channel_quantity == 1)
+		{
+		    dmx_local_data[1] = dmx_local_data[0];
+		    dmx_local_data[2] = dmx_local_data[0];
+		    dmx_local_data[3] = dmx_local_data[0];		    
+		}
+                // FiltersAndOffsets_Channels_to_Backup (&(pmem->fixed_channels[0]));
+                FiltersAndOffsets_Channels_to_Backup (dmx_local_data);                
+            }
+
             if (resp == resp_need_to_save)
             {
                 need_to_save_timer = 10000;
@@ -490,7 +405,7 @@ void Manager (parameters_typedef * pmem)
     }
 
     // Check Temp prot
-    if (Temp_Probe_Present_Get())
+    if (Manager_Probe_Temp_Get())
     {
         if ((mngr_state < MNGR_ENTERING_MAIN_MENU) &&
             (!protections_sample_timer))
@@ -498,7 +413,6 @@ void Manager (parameters_typedef * pmem)
             unsigned short temp_filtered = 0;
             unsigned char temp_deg = 0;
             temp_filtered = MA16_U16Circular(&temp_filter, Temp_Channel);
-	    Temp_Probe_Meas_Filtered_Save(temp_filtered);
             temp_deg = Temp_TempToDegreesExtended (temp_filtered);
 
             if (temp_deg > pmem->temp_prot_deg)
@@ -545,6 +459,24 @@ void Manager (parameters_typedef * pmem)
             protections_sample_timer = 10;
         }
     }            
+}
+
+
+unsigned char Manager_Probe_Temp_Get (void)
+{
+    return check_probe_temp;
+}
+        
+
+void Manager_Probe_Temp_Set (void)
+{
+    check_probe_temp = 1;
+}
+
+
+void Manager_Probe_Temp_Reset (void)
+{
+    check_probe_temp = 0;
 }
 
 

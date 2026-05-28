@@ -19,8 +19,8 @@
 
 
 //----------- Firmware Version -------------------
-// #define FIRMWARE_VERSION_1_2    // ch1 ch2 on phase ch3 ch4 out of phase
-#define FIRMWARE_VERSION_1_1    // one channel added, all channels equal to one
+#define FIRMWARE_VERSION_1_2    // is possible to select 1 2 3 and 4 channels
+// #define FIRMWARE_VERSION_1_1    // one channel added, all channels equal to one
 // #define FIRMWARE_VERSION_1_0    // first production
 
 
@@ -33,7 +33,10 @@
 
 // #define USE_CTROL_FAN_ALWAYS_ON    //fan always
 
-#define ONE_CHANNEL_CONF_INIT    // init with one channel default for firm1.1
+// #define ONE_CHANNEL_CONF_INIT    // init with one channel default for firm1.1
+#define TWO_CHANNEL_CONF_INIT    // cct1 or cct2 ch1 // ch2; ch3 // ch4
+// #define FOUR_CHANNEL_CONF_INIT    // default for RGBW
+
 // --- PWM Frequency --- //
 #define USE_FREQ_16KHZ
 // #define USE_FREQ_12KHZ

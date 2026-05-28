@@ -44,6 +44,13 @@
 // Module Exported Functions ---------------------------------------------------
 unsigned char Temp_TempToDegreesExtended (unsigned short temp);
 
+unsigned char Temp_Probe_Present_Get (void);
+void Temp_Probe_Present_Set (void);
+void Temp_Probe_Present_Reset (void);
+
+void Temp_Probe_Meas_Filtered_Save (unsigned short temp_filtered);
+unsigned short Temp_Probe_Meas_Filtered_Get (void);
+
 
 #endif    /* _TEMPERATURES_H_ */
 

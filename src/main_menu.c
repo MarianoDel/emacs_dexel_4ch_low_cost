@@ -27,6 +27,8 @@ typedef enum {
     MAIN_MENU_CHANGING_TEMP_PROT,
     MAIN_MENU_CHANGE_CHANNELS_QTTY,
     MAIN_MENU_CHANGING_CHANNELS_QTTY,
+    MAIN_MENU_CHANGE_CCT_MODE,
+    MAIN_MENU_CHANGING_CCT_MODE,
     MAIN_MENU_SHOW_VERSION,
     MAIN_MENU_WAIT_SHOW_VERSION
 
@@ -246,11 +248,7 @@ resp_t Main_Menu (parameters_typedef * mem, sw_actions_t actions)
         {
             Check_S2_Accel_Slow();            
             resp = resp_continue;
-#ifdef ONE_CHANNEL_CONF_INIT
-            main_menu_state = MAIN_MENU_SHOW_VERSION;
-#else
             main_menu_state++;	    
-#endif
         }
         break;
 
@@ -284,13 +282,19 @@ resp_t Main_Menu (parameters_typedef * mem, sw_actions_t actions)
         if (resp == resp_up)
         {
 	    // 1, 3 or 4 channels
+            // Check_S2_Accel_Fast();
+            // unsigned char * pch = &(mem->dmx_channel_quantity);
+	    // if (*pch == 1)
+	    // 	*pch = 3;
+	    // else if (*pch < 4)
+            //     *pch += 1;
+
+	    // 1 to 4 channels
             Check_S2_Accel_Fast();
             unsigned char * pch = &(mem->dmx_channel_quantity);
-	    if (*pch == 1)
-		*pch = 3;
-	    else if (*pch < 4)
+	    if (*pch < 4)
                 *pch += 1;
-
+	    
             main_menu_state--;
             main_menu_config_change = 1;
         }
@@ -298,13 +302,19 @@ resp_t Main_Menu (parameters_typedef * mem, sw_actions_t actions)
         if (resp == resp_dwn)
         {
 	    // 1, 3 or 4 channels	    
+            // Check_S2_Accel_Fast();            
+            // unsigned char * pch = &(mem->dmx_channel_quantity);
+            // if (*pch == 3)
+	    // 	*pch = 1;
+	    // else if (*pch > 3)		
+            //     *pch -= 1;
+
+	    // 1 to 4 channels	    
             Check_S2_Accel_Fast();            
             unsigned char * pch = &(mem->dmx_channel_quantity);
-            if (*pch == 3)
-		*pch = 1;
-	    else if (*pch > 3)		
+	    if (*pch > 0)		
                 *pch -= 1;
-
+	    
             main_menu_state--;            
             main_menu_config_change = 1;
         }
@@ -334,10 +344,81 @@ resp_t Main_Menu (parameters_typedef * mem, sw_actions_t actions)
         {
             Check_S2_Accel_Slow();            
             resp = resp_continue;
-            main_menu_state++;
+	    if (mem->dmx_channel_quantity == 2)
+		main_menu_state = MAIN_MENU_CHANGE_CCT_MODE;
+	    else
+		main_menu_state = MAIN_MENU_SHOW_VERSION;
         }
         break;
+
+    case MAIN_MENU_CHANGE_CCT_MODE:
+
+        SCREEN_Text2_BlankLine1();
+        if (main_menu_showing)
+        {
+	    if (mem->program_type == CCT1_MODE)
+		SCREEN_Text2_Line1("CCT1 Mode");
+	    else
+		SCREEN_Text2_Line1("CCT2 Mode");
+        }
+
+        main_need_display_update = 1;
+        main_menu_state++;
+        break;
+
+    case MAIN_MENU_CHANGING_CCT_MODE:
         
+        resp = Options_Up_Dwn_Next (actions);
+
+        if (resp != resp_continue)
+        {
+            main_need_display_update = 1;
+            main_menu_out_cnt = 20;
+            main_menu_timer = 500;
+            main_menu_showing = 1;
+        }
+        
+        if ((resp == resp_dwn) || (resp == resp_up))
+        {
+	    // CCT1_MODE or CCT2_MODE
+	    if (mem->program_type == CCT1_MODE)
+		mem->program_type = CCT2_MODE;
+	    else
+		mem->program_type = CCT1_MODE;
+	    
+            main_menu_state--;
+            main_menu_config_change = 1;
+        }
+
+        if (!main_menu_timer)
+        {
+            main_menu_timer = 500;
+            if (main_menu_showing)
+                main_menu_showing = 0;
+            else
+                main_menu_showing = 1;
+
+            main_menu_state--;
+            main_menu_out_cnt--;
+
+            if (!main_menu_out_cnt)
+            {
+                main_menu_state = MAIN_MENU_INIT;
+                Check_S2_Accel_Slow();
+
+                if (main_menu_config_change)
+                    resp = resp_need_to_save;
+            }
+        }
+
+        if (resp == resp_ok)
+        {
+            Check_S2_Accel_Slow();            
+            resp = resp_continue;
+	    main_menu_state++;
+        }
+        break;
+	
     case MAIN_MENU_SHOW_VERSION:
         SCREEN_Text2_BlankLine1();
         SCREEN_Text2_BlankLine2();

@@ -1,5 +1,4 @@
 //----------------------------------------------------
-// #### DEXEL 2CH PROJECT - Custom Board ####
 // ##
 // ## @Author: Med
 // ## @Editor: Emacs - ggtags
@@ -16,6 +15,8 @@
 
 
 // Globals ---------------------------------------------------------------------
+unsigned char temp_probe_present = 0;
+unsigned short temp_probe_meas = 0;
 
 
 // Module Private Types & Macros -----------------------------------------------
@@ -42,5 +43,34 @@ unsigned char Temp_TempToDegreesExtended (unsigned short temp)
     return (unsigned char) calc;
 }
 
+
+unsigned char Temp_Probe_Present_Get (void)
+{
+    return temp_probe_present;
+}
+        
+
+void Temp_Probe_Present_Set (void)
+{
+    temp_probe_present = 1;
+}
+
+
+void Temp_Probe_Present_Reset (void)
+{
+    temp_probe_present = 0;
+}
+
+
+void Temp_Probe_Meas_Filtered_Save (unsigned short temp_filtered)
+{
+    temp_probe_meas = temp_filtered;
+}
+
+
+unsigned short Temp_Probe_Meas_Filtered_Get (void)
+{
+    return temp_probe_meas;
+}
 
 //--- end of file ---//

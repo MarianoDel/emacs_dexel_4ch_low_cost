@@ -78,16 +78,30 @@ int main(int argc, char *argv[])
     GtkWidget *btn2 = (GtkWidget *) gtk_builder_get_object (builder, "cwButton");
     GtkWidget *btn3 = (GtkWidget *) gtk_builder_get_object (builder, "setButton");    
     GtkWidget *btn4 = (GtkWidget *) gtk_builder_get_object (builder, "quitButton");
+
+    GtkWidget *togg1 = (GtkWidget *) gtk_builder_get_object (builder, "button1Toggle");
+    GtkWidget *togg2 = (GtkWidget *) gtk_builder_get_object (builder, "button2Toggle");
+    GtkWidget *togg3 = (GtkWidget *) gtk_builder_get_object (builder, "button3Toggle");
+    
     imag1 = (GtkWidget *) gtk_builder_get_object (builder, "image1");
 
     g_signal_connect(btn1, "clicked", G_CALLBACK(button1_function), NULL);    
     g_signal_connect(btn2, "clicked", G_CALLBACK(button2_function), NULL);
     g_signal_connect(btn3, "clicked", G_CALLBACK(button3_function), NULL);    
     g_signal_connect(btn4, "clicked", G_CALLBACK(end_program), NULL);
+    
+    g_signal_connect (togg1, "toggled", G_CALLBACK (toggled1_function), NULL);
+    g_signal_connect (togg2, "toggled", G_CALLBACK (toggled2_function), NULL);
+    g_signal_connect (togg3, "toggled", G_CALLBACK (toggled3_function), NULL);
 
     gtk_button_set_label(GTK_BUTTON(btn1), "S1");
     gtk_button_set_label(GTK_BUTTON(btn2), "S2");
-    gtk_button_set_label(GTK_BUTTON(btn3), "S1 & S2");        
+    gtk_button_set_label(GTK_BUTTON(btn3), "S1 & S2");
+
+    gtk_button_set_label(GTK_BUTTON(togg1), "Set S1");
+    gtk_button_set_label(GTK_BUTTON(togg2), "Set S2");
+    gtk_button_set_label(GTK_BUTTON(togg3), "NC");    
+    
 
     gtk_widget_show_all (win);
     init_surface();

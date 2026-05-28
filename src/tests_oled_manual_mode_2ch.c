@@ -8,7 +8,8 @@
 #include "tests_oled_application.h"
 
 // Application Includes needed for this test
-#include "main_menu.h"
+// #include "main_menu.h"
+#include "manual_mode_2ch.h"
 #include "screen.h"
 #include "switches_answers.h"
 #include "parameters.h"
@@ -18,11 +19,19 @@
 
 
 // Externals -- Access to the tested Module ------------------------------------
+extern void display_update_int_state_machine (void);
+extern void DataShow_2Ch (unsigned char to_show,
+			  unsigned char bright,
+			  unsigned char temp,
+			  unsigned short degree);
 
 
 // Globals -- Externals for the tested Module ----------------------------------
 sw_actions_t switch_actions = selection_none;
+unsigned char mode_state = 0;
+unsigned short mode_effect_timer = 0;
 unsigned int timer_standby = 0;
+
 parameters_typedef mem;
 
 
@@ -47,7 +56,8 @@ gboolean Test_Main_Loop (gpointer user_data)
         SCREEN_Text2_Line1 ("Dexel     ");    
         SCREEN_Text2_Line2 ("  Lighting");
 
-        Main_Menu_Reset ();
+        // Main_Menu_Reset ();
+	mem.program_type = CCT2_MODE;
         mem.max_current_channels[0] = 128;
         mem.max_current_channels[1] = 121;
         mem.max_current_channels[2] = 120;
@@ -56,6 +66,7 @@ gboolean Test_Main_Loop (gpointer user_data)
 	mem.dmx_channel_quantity = 1;
         mem.temp_prot_deg = 30;
         timer_standby = 1300;
+	printf("to setup 1\n");
     }
 
     if (setup_done == 1)
@@ -63,21 +74,20 @@ gboolean Test_Main_Loop (gpointer user_data)
         if (timer_standby)
             display_update_int_state_machine ();
         else
+	{
             setup_done = 2;
+	    ManualMode_2Ch_Reset();
+	    printf("reseting manual mode, go loop\n");	    
+	}
     }
 
     if (setup_done == 2)
     {
-        resp = Main_Menu (&mem, switch_actions);
+        resp = ManualMode_2Ch (&mem, switch_actions);
 
-        if (resp == resp_up)
+        if (resp == resp_need_to_save)
         {
-            printf("resp_up\n");
-        }
-
-        if (resp == resp_dwn)
-        {
-            printf("resp_dwn\n");
+            printf("a save is needed!!!\n");
         }
 
         if (resp == resp_change)
@@ -92,18 +102,16 @@ gboolean Test_Main_Loop (gpointer user_data)
         }
         
         display_update_int_state_machine ();
-
-    }
-
-    if (setup_done ==3)
-    {
     }
 
     //wraper to clean sw
     g_mutex_lock (&mutex);
 
-    if (switch_actions != selection_none)
-        switch_actions = selection_none;
+    if (!toggled_on)
+    {
+	if (switch_actions != selection_none)
+	    switch_actions = selection_none;
+    }
     
     g_mutex_unlock (&mutex);
     // usleep(500);
@@ -116,7 +124,7 @@ gboolean Test_Timeouts_Loop_1ms (gpointer user_data)
     if (timer_standby)
         timer_standby--;
 
-    Main_Menu_Timeouts();
+    ManualMode_2Ch_UpdateTimers();
     
     return TRUE;
 }
@@ -232,5 +240,22 @@ void Check_S2_Accel_Slow (void)
 {
 }
 
+
+unsigned char Temp_TempToDegreesExtended (unsigned short degree)
+{
+    return 85;
+}
+
+
+unsigned short Temp_Probe_Meas_Filtered_Get (void)
+{
+    return 1000;
+}
+
+
+unsigned char Temp_Probe_Present_Get (void)
+{
+    return 1;
+}
 
 //--- end of file ---//

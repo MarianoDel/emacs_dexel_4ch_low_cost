@@ -25,7 +25,7 @@
 
 
 // Module Private Types Constants and Macros -----------------------------------
-typedef enum {
+enum Manual_States {
     MANUAL_MENU_INIT = 0,
     MANUAL_MENU_SELECT_INNER,
     MANUAL_MENU_WAIT_INNER,    
@@ -33,7 +33,7 @@ typedef enum {
     MANUAL_MENU_INNER_SKIPPING,    
     MANUAL_MENU_INNER_FIXED
     
-} manual_menu_state_e;
+};
 
 
 #define CHANGE_OPT_TT    500
@@ -45,14 +45,22 @@ typedef enum {
 extern volatile unsigned short adc_ch [];
 extern unsigned char dmx_local_data [];
 
+// -- externals re-used
+extern unsigned char mode_state;
+extern volatile unsigned short mode_effect_timer;
+
+// variables re-use
+#define manual_state    mode_state
+#define manual_effect_timer    mode_effect_timer
+
 
 // Globals ---------------------------------------------------------------------
 volatile unsigned short manual_menu_timer = 0;
-volatile unsigned short manual_effect_timer = 0;
+// volatile unsigned short manual_effect_timer = 0;
 unsigned char manual_menu_showing = 0;
 unsigned char manual_menu_out_cnt = 0;
 unsigned char manual_menu_last_inner_mode = 0;
-manual_menu_state_e manual_state = MANUAL_MENU_INIT;
+// manual_menu_state_e manual_state = MANUAL_MENU_INIT;
 
 
 
@@ -167,7 +175,6 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
             manual_state = MANUAL_MENU_INIT;
             resp = resp_need_to_save;
         }
-        
         break;
 
     case MANUAL_MENU_INNER_SKIPPING:
@@ -179,7 +186,6 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
             manual_state = MANUAL_MENU_INIT;
             resp = resp_need_to_save;
         }
-        
         break;
 
     case MANUAL_MENU_INNER_FIXED:
@@ -191,7 +197,6 @@ resp_t Manual_Menu (parameters_typedef * mem, sw_actions_t actions)
             manual_state = MANUAL_MENU_INIT;
             resp = resp_need_to_save;
         }
-
         break;
         
     }
@@ -324,7 +329,7 @@ resp_t Manual_Menu_Fixed_Colors (parameters_typedef * mem,
             char s_temp [20];
             SCREEN_Text2_BlankLine1();
             SCREEN_Text2_BlankLine2();
-            if (Manager_Probe_Temp_Get())
+            if (Temp_Probe_Present_Get())
             {
                 sprintf(s_temp, "Temp: %dC", Temp_TempToDegreesExtended (Temp_Channel));
                 SCREEN_Text2_Line1(s_temp);
@@ -804,7 +809,7 @@ resp_t Manual_Menu_Fading (parameters_typedef * mem,
             char s_temp [20];
             SCREEN_Text2_BlankLine1();
             SCREEN_Text2_BlankLine2();
-            if (Manager_Probe_Temp_Get())
+            if (Temp_Probe_Present_Get())
             {
                 sprintf(s_temp, "Temp: %dC", Temp_TempToDegreesExtended (Temp_Channel));
                 SCREEN_Text2_Line1(s_temp);
@@ -1005,7 +1010,7 @@ resp_t Manual_Menu_Skipping (parameters_typedef * mem,
             char s_temp [20];
             SCREEN_Text2_BlankLine1();
             SCREEN_Text2_BlankLine2();
-            if (Manager_Probe_Temp_Get())
+            if (Temp_Probe_Present_Get())
             {
                 sprintf(s_temp, "Temp: %dC", Temp_TempToDegreesExtended (Temp_Channel));
                 SCREEN_Text2_Line1(s_temp);

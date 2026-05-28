@@ -109,9 +109,32 @@ void FiltersAndOffsets_Calc_SM (void)
         limit_output[1] = *(ch_bkp_val + 1);
         limit_output[2] = *(ch_bkp_val + 2);
         limit_output[3] = *(ch_bkp_val + 3);
-        filters_sm++;
-        break;
 
+	filters_sm++;
+	// if (mem_conf.dmx_channels_qtty == 2)
+	// {
+	//     filters_sm = FILTERS_2CH_BRIGHT_AND_TEMP;
+	// }
+	// else
+	//     filters_sm = FILTERS_LIMIT_EACH_CHANNEL;
+	
+        break;
+	
+    // case FILTERS_2CH_BRIGHT_AND_TEMP:
+    // 	// 
+    // 	unsigned char bright = 0;
+    // 	unsigned char temp0 = 0;
+    // 	unsigned char temp1 = 0;
+
+    // 	// backup and bright temp calcs
+    // 	// ch0 the bright ch1 the temp
+    // 	bright = *(ch_dmx_val + 0);
+    // 	temp0 = 255 - *(ch_dmx_val + 1);
+    // 	temp1 = 255 - temp0;
+		    
+    // 	calc = temp0 * bright;
+    // 	break;
+	
     case FILTERS_LIMIT_EACH_CHANNEL:
         calc = limit_output[0] * mem_conf.max_current_channels[0];
         limit_output[0] = (unsigned short) calc;

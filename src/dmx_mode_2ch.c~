@@ -22,7 +22,7 @@
 
 
 // Module Private Types Constants and Macros -----------------------------------
-enum Dmx_States {
+typedef enum {
     DMX_MENU_INIT = 0,
     DMX_MENU_SHOW_FIRST,
     DMX_MENU_WAIT_INPUTS,
@@ -32,7 +32,7 @@ enum Dmx_States {
     DMX_MENU_CHANGING_ADDRESS,
     DMX_MENU_SHOW_TEMP
     
-};
+} dmx_menu_state_e;
 
 #define TT_DMX_RECEIVING    1000
 
@@ -49,27 +49,17 @@ extern volatile unsigned char DMX_channel_quantity;
 extern volatile unsigned char dmx_receive_flag;
 
 extern volatile unsigned short adc_ch [];
-extern unsigned char dmx_local_data [];
-
-
-// -- externals re-used
-extern unsigned char mode_state;
-extern volatile unsigned short mode_effect_timer;
-extern volatile unsigned short dmx_rx_timer;
-
-// variables re-use
-#define dmx_state    mode_state
-#define dmx_menu_timer    mode_effect_timer
-#define dmx_mode_dmx_receiving_timer    dmx_rx_timer
-
 
 // Globals ---------------------------------------------------------------------
-// volatile unsigned short dmx_menu_timer = 0;
+volatile unsigned short dmx_menu_timer = 0;
 unsigned char dmx_menu_showing = 0;
 unsigned char dmx_menu_out_cnt = 0;
-// dmx_menu_state_e dmx_state = DMX_MENU_INIT;
+dmx_menu_state_e dmx_state = DMX_MENU_INIT;
 unsigned char dmx_menu_update_values = 0;
-// unsigned short dmx_mode_dmx_receiving_timer = 0;
+unsigned short dmx_mode_dmx_receiving_timer = 0;
+
+unsigned char dmx_local_data [4] = { 0 };
+
 sw_actions_t dmx_menu_last_action = selection_none;
 
 // Module Private Functions ----------------------------------------------------
@@ -198,7 +188,7 @@ resp_t Dmx_Menu (parameters_typedef * mem, sw_actions_t actions)
             char s_temp [20];
             SCREEN_Text2_BlankLine1();
             SCREEN_Text2_BlankLine2();
-            if (Temp_Probe_Present_Get())
+            if (Manager_Probe_Temp_Get())
             {
                 sprintf(s_temp, "Temp: %dC", Temp_TempToDegreesExtended (Temp_Channel));
                 SCREEN_Text2_Line1(s_temp);

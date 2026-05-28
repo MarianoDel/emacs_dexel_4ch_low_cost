@@ -68,10 +68,10 @@ extern char s_blank [];
 
 // - Externals from ADC Converter -------
 volatile unsigned short adc_ch [ADC_CHANNEL_QUANTITY];
+unsigned char dmx_local_data [4] = { 0 };
 
 // - Externals for temp prot
 ma16_u16_data_obj_t temp_filter;
-
 
 // - Externals de la Memoria y los modos -------
 parameters_typedef * pflash_mem = (parameters_typedef *) (unsigned int *) FLASH_ADDRESS_FOR_BKP;    //en flash
@@ -87,6 +87,10 @@ volatile unsigned char dmx_receive_flag = 0;
 // - Externals shared by modes
 unsigned char mode_state;
 volatile unsigned short mode_effect_timer;
+volatile unsigned short dmx_rx_timer;
+unsigned char mode_cntr_out;
+unsigned char mode_show_options;
+
 
 // Globals ---------------------------------------------------------------------
 // - Globals from timers -------
@@ -186,13 +190,20 @@ int main(void)
     {
         // Default mem config
         mem_conf.dmx_first_channel = 1;
-#ifdef ONE_CHANNEL_CONF_INIT
+#if (defined ONE_CHANNEL_CONF_INIT)
         mem_conf.dmx_channel_quantity = 1;
         mem_conf.max_current_channels[0] = 230;
         mem_conf.max_current_channels[1] = 230;
         mem_conf.max_current_channels[2] = 230;
         mem_conf.max_current_channels[3] = 230;	
-#else
+#elif (defined TWO_CHANNEL_CONF_INIT)
+	mem_conf.program_type = CCT1_MODE;
+        mem_conf.dmx_channel_quantity = 2;
+        mem_conf.max_current_channels[0] = 255;
+        mem_conf.max_current_channels[1] = 255;
+        mem_conf.max_current_channels[2] = 255;
+        mem_conf.max_current_channels[3] = 255;
+#elif (defined FOUR_CHANNEL_CONF_INIT)
         mem_conf.dmx_channel_quantity = 4;	
         mem_conf.max_current_channels[0] = 255;
         mem_conf.max_current_channels[1] = 255;
@@ -239,10 +250,10 @@ int main(void)
     if (temp_filtered < LM335_SHORTED)
     {
         CTRL_FAN_ON;
-        Manager_Probe_Temp_Reset();
+        Temp_Probe_Present_Reset();
     }
     else
-        Manager_Probe_Temp_Set();
+        Temp_Probe_Present_Set();
 #endif
     // -- end of check NTC or LM335 connection on init --
     

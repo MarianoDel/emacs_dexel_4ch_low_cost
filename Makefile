@@ -90,6 +90,9 @@ SRC += ./src/ssd1306_gfx.c
 SRC += ./src/dmx_receiver.c
 
 SRC += ./src/manager.c
+SRC += ./src/manual_mode_2ch.c
+SRC += ./src/dmx_mode_2ch.c
+SRC += ./src/dmx_utils.c
 
 SRC += ./src/temperatures.c
 SRC += ./src/menu_options_oled.c
@@ -355,7 +358,47 @@ tests_oled_main_menu:
 	# run global tags
 	gtags -q
 	# run the simulation
-	# ./tests_gtk
+	./tests_gtk
+
+
+tests_oled_manual_mode_2ch:
+	# first compile common modules (modules to test and dependencies)
+	gcc -c src/manual_mode_2ch.c -I. $(INCDIR)
+	gcc -c src/dmx_utils.c -I. $(INCDIR)
+	# gcc -c src/menu_options_oled.c -I. $(INCDIR)
+	gcc -c src/screen.c -I. $(INCDIR)
+	gcc -c src/ssd1306_display.c -I. $(INCDIR)
+	gcc -c src/ssd1306_gfx.c -I. $(INCDIR)
+	# the module that implements tests_lcd_application.h functions
+	gcc -c `pkg-config --cflags gtk+-3.0` src/tests_oled_manual_mode_2ch.c -o tests_oled_manual_mode_2ch.o -Wno-error=implicit-function-declaration
+	# then the gtk lib modules
+	gcc -c `pkg-config --cflags gtk+-3.0` src/tests_glade_oled.c -o tests_glade_oled.o
+	# link everything
+	gcc tests_glade_oled.o tests_oled_manual_mode_2ch.o manual_mode_2ch.o dmx_utils.o screen.o ssd1306_display.o ssd1306_gfx.o `pkg-config --libs gtk+-3.0` -o tests_gtk
+	# run global tags
+	gtags -q
+	# run the simulation
+	./tests_gtk
+
+
+tests_oled_dmx_mode_2ch:
+	# first compile common modules (modules to test and dependencies)
+	gcc -c src/dmx_mode_2ch.c -I. $(INCDIR)
+	gcc -c src/dmx_utils.c -I. $(INCDIR)
+	# gcc -c src/menu_options_oled.c -I. $(INCDIR)
+	gcc -c src/screen.c -I. $(INCDIR)
+	gcc -c src/ssd1306_display.c -I. $(INCDIR)
+	gcc -c src/ssd1306_gfx.c -I. $(INCDIR)
+	# the module that implements tests_lcd_application.h functions
+	gcc -c `pkg-config --cflags gtk+-3.0` src/tests_oled_dmx_mode_2ch.c -o tests_oled_dmx_mode_2ch.o -Wno-error=implicit-function-declaration
+	# then the gtk lib modules
+	gcc -c `pkg-config --cflags gtk+-3.0` src/tests_glade_oled.c -o tests_glade_oled.o
+	# link everything
+	gcc tests_glade_oled.o tests_oled_dmx_mode_2ch.o dmx_mode_2ch.o dmx_utils.o screen.o ssd1306_display.o ssd1306_gfx.o `pkg-config --libs gtk+-3.0` -o tests_gtk
+	# run global tags
+	gtags -q
+	# run the simulation
+	./tests_gtk
 
 
 tests_pwm_post_map:
