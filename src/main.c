@@ -90,7 +90,8 @@ volatile unsigned short mode_effect_timer;
 volatile unsigned short dmx_rx_timer;
 unsigned char mode_cntr_out;
 unsigned char mode_show_options;
-
+volatile unsigned char sw_wait_free_timer = 0;
+unsigned char sw_fast = 0;
 
 // Globals ---------------------------------------------------------------------
 // - Globals from timers -------

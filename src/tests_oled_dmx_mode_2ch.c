@@ -34,14 +34,24 @@ volatile unsigned char dmx_buff_data[4];
 volatile unsigned char Packet_Detected_Flag = 0;
 
 parameters_typedef mem;
+unsigned char mode_show_options = 0;
+unsigned char mode_cntr_out = 0;
+
 volatile unsigned int timer_standby = 0;
 volatile unsigned char timer_for_new_dmx = 0;
+volatile unsigned short dmx_rx_timer = 0;
+
+unsigned char dmx_local_data[4] = { 0 };
+
+volatile unsigned char sw_wait_free_timer = 0;
+unsigned char sw_fast = 0;
 
 
 // Globals ---------------------------------------------------------------------
 static GMutex mutex;
 int setup_done = 0;
 int toggled_on = 0;
+int dmx_data = 0;
 
 
 // Testing Function loop -------------------------------------------------------
@@ -97,6 +107,22 @@ gboolean Test_Main_Loop (gpointer user_data)
         if (resp == resp_change)
         {
             printf("resp_change\n");
+	    printf("dmx_local_data getted\n");
+	    for (int i = 0; i < 4; i++)
+		printf("dmx_local_data[%d]: %d\n", i, dmx_local_data[i]);
+	    
+	    Bright_TempColor_To_Temp0_Temp1(dmx_local_data[0],
+					    dmx_local_data[1],
+					    &dmx_local_data[0],
+					    &dmx_local_data[2]);
+
+	    dmx_local_data[1] = dmx_local_data[0];
+	    dmx_local_data[3] = dmx_local_data[2];
+	    
+	    printf("dmx_local_data processed\n");	    
+	    for (int i = 0; i < 4; i++)
+		printf("dmx_local_data[%d]: %d\n", i, dmx_local_data[i]);
+	    
         }
 
         if (resp == resp_ok)
@@ -109,10 +135,45 @@ gboolean Test_Main_Loop (gpointer user_data)
 
 	if (!timer_for_new_dmx)
 	{
-	    timer_for_new_dmx = 3;
+	    timer_for_new_dmx = 5;
 	    Packet_Detected_Flag = 1;
-	    if (mem.max_current_channels[0] < 255)
-		mem.max_current_channels[0] += 1;
+	    switch(dmx_data)
+	    {
+	    case 0:
+		printf("case 0\n");
+		dmx_buff_data[1] = 255;
+		dmx_buff_data[2] = 0;
+		dmx_data++;
+		break;
+
+	    case 1:
+		printf("case 1\n");		
+		dmx_buff_data[1] = 255;
+		dmx_buff_data[2] = 127;
+		dmx_data++;
+		break;
+
+	    case 2:
+		printf("case 2\n");		
+		dmx_buff_data[1] = 255;
+		dmx_buff_data[2] = 255;
+		dmx_data++;
+		break;
+
+	    case 3:
+		printf("case 3\n");		
+		dmx_buff_data[1] = 1;
+		dmx_buff_data[2] = 0;
+		dmx_data = 0;		
+		break;
+
+	    default:
+		dmx_data = 0;
+		break;
+	    }
+
+	    // if (mem.max_current_channels[0] < 255)
+	    // 	mem.max_current_channels[0] += 1;
 
 	}
     }

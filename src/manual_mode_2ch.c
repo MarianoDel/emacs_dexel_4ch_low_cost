@@ -53,7 +53,8 @@ extern unsigned char mode_state;
 extern volatile unsigned short mode_effect_timer;
 extern unsigned char mode_cntr_out;
 extern unsigned char mode_show_options;
-
+extern volatile unsigned char sw_wait_free_timer;
+extern unsigned char sw_fast;
 
 // variables re-use
 #define manual_mode_2ch_state    mode_state
@@ -62,10 +63,12 @@ extern unsigned char mode_show_options;
 #define show_option    mode_show_options
 
 
+
 // Globals ---------------------------------------------------------------------
 // volatile unsigned short mm_serial_timer = 0;
 // volatile unsigned short mm_serial_need_to_save_timer = 0;
 // unsigned char mm_serial_need_to_save_flag = 0;
+
 
 
 // Module Private Functions ----------------------------------------------------
@@ -81,8 +84,8 @@ void ManualMode_2Ch_UpdateTimers (void)
     if (manual_mode_2ch_timer)
         manual_mode_2ch_timer--;
 
-    // if (mm_serial_timer)
-    //     mm_serial_timer--;
+    if (sw_wait_free_timer)
+        sw_wait_free_timer--;
 
     // if (mm_serial_need_to_save_timer)
     //     mm_serial_need_to_save_timer--;
@@ -94,6 +97,7 @@ void ManualMode_2Ch_Reset (void)
 {
     manual_mode_2ch_state = MM_2CH_INIT;
 }
+
 
 
 resp_t ManualMode_2Ch (parameters_typedef * mem, sw_actions_t action)
@@ -124,6 +128,8 @@ resp_t ManualMode_2Ch (parameters_typedef * mem, sw_actions_t action)
 
 	manual_need_display_update = 1;
         manual_mode_2ch_state++;
+	// first update
+	resp = resp_change;
         break;
 
     case MM_2CH_SHOW_TEMP:
@@ -215,22 +221,37 @@ resp_t ManualMode_2Ch (parameters_typedef * mem, sw_actions_t action)
         break;
 
     case MM_2CH_SELECT_BRIGHT:
-        if ((sw == selection_up) ||
-            (sw == selection_up_fast))
+	if (sw == selection_none)
+	    sw_fast = 0;
+	
+        if (sw == selection_up)
         {
-            if (sw == selection_up_fast)
-            {
-                if (*(ch + 0) < (255 - 10))
-                    *(ch + 0) += 10;
-                else
-                    *(ch + 0) = 255;
-            }
-            else
-            {
-                if (*(ch + 0) < 255)
-                    *(ch + 0) += 1;
-            }
+	    if (sw_wait_free_timer)
+		break;
+	    
+	    sw_wait_free_timer = 200;
+	    sw_fast++;
 
+	    if (sw_fast > 10)
+	    {
+		if (*(ch + 0) < 255 - 10)
+		    *(ch + 0) += 10;
+		else
+		    *(ch + 0) = 255;
+	    }
+	    else if (sw_fast > 5)
+	    {
+		if (*(ch + 0) < 255 - 5)
+		    *(ch + 0) += 5;
+		else
+		    *(ch + 0) = 255;
+	    }
+	    else
+	    {
+		if (*(ch + 0) < 255)
+		    *(ch + 0) += 1;
+	    }
+	    
             DataShow_2Ch (SHOW_BRIGHT,
 			  *(ch + 0),
 			  *(ch + 1),
@@ -238,26 +259,39 @@ resp_t ManualMode_2Ch (parameters_typedef * mem, sw_actions_t action)
             
 	    manual_need_display_update = 1;
 	    show_option = 1;
+            mm_menu_cntr_out = CNTR_TO_OUT;	    
             manual_mode_2ch_timer = TT_SHOW_OPTIONS;
             resp = resp_change;
         }
 
-        if ((sw == selection_dwn) ||
-            (sw == selection_dwn_fast))
+        if (sw == selection_dwn)
         {
-            if (sw == selection_dwn_fast)
-            {
-                if (*(ch + 0) > 10)
-                    *(ch + 0) -= 10;
-                else
-                    *(ch + 0) = 0;
-            }
-            else
-            {
-                if (*(ch + 0) > 0)
-                    *(ch + 0) -= 1;
-            }
+	    if (sw_wait_free_timer)
+		break;
+	    
+	    sw_wait_free_timer = 200;
+	    sw_fast++;
 
+	    if (sw_fast > 10)
+	    {
+		if (*(ch + 0) > 10)
+		    *(ch + 0) -= 10;
+		else
+		    *(ch + 0) = 0;
+	    }
+	    else if (sw_fast > 5)
+	    {
+		if (*(ch + 0) > 5)
+		    *(ch + 0) -= 5;
+		else
+		    *(ch + 0) = 0;
+	    }
+	    else
+	    {
+		if (*(ch + 0) > 0)
+		    *(ch + 0) -= 1;
+	    }
+	    
             DataShow_2Ch (SHOW_BRIGHT,
 			  *(ch + 0),
 			  *(ch + 1),
@@ -265,6 +299,7 @@ resp_t ManualMode_2Ch (parameters_typedef * mem, sw_actions_t action)
             
 	    manual_need_display_update = 1;
 	    show_option = 1;
+            mm_menu_cntr_out = CNTR_TO_OUT;	    
             manual_mode_2ch_timer = TT_SHOW_OPTIONS;
             resp = resp_change;
         }
@@ -307,21 +342,36 @@ resp_t ManualMode_2Ch (parameters_typedef * mem, sw_actions_t action)
         break;
 
     case MM_2CH_SELECT_TEMP:
-        if ((sw == selection_up) ||
-            (sw == selection_up_fast))
+	if (sw == selection_none)
+	    sw_fast = 0;
+
+        if (sw == selection_up)
         {
-            if (sw == selection_up_fast)
-            {
-                if (*(ch + 1) < (255 - 10))
-                    *(ch + 1) += 10;
-                else
-                    *(ch + 1) = 255;
-            }
-            else
-            {
-                if (*(ch + 1) < 255)
-                    *(ch + 1) += 1;
-            }
+	    if (sw_wait_free_timer)
+		break;
+	    
+	    sw_wait_free_timer = 200;
+	    sw_fast++;
+	    
+	    if (sw_fast > 10)
+	    {
+		if (*(ch + 1) < 255 - 10)
+		    *(ch + 1) += 10;
+		else
+		    *(ch + 1) = 255;
+	    }
+	    else if (sw_fast > 5)
+	    {
+		if (*(ch + 1) < 255 - 5)
+		    *(ch + 1) += 5;
+		else
+		    *(ch + 1) = 255;
+	    }
+	    else
+	    {
+		if (*(ch + 1) < 255)
+		    *(ch + 1) += 1;
+	    }
 
 	    if (program == CCT1_MODE)
 	    {
@@ -339,25 +389,38 @@ resp_t ManualMode_2Ch (parameters_typedef * mem, sw_actions_t action)
 	    }
 	    manual_need_display_update = 1;
             show_option = 1;
+            mm_menu_cntr_out = CNTR_TO_OUT;	    
             manual_mode_2ch_timer = TT_SHOW_OPTIONS;
             resp = resp_change;            
         }
 
-        if ((sw == selection_dwn) ||
-            (sw == selection_dwn_fast))
+        if (sw == selection_dwn)
         {
-            if (sw == selection_dwn_fast)
-            {
-                if (*(ch + 1) > 10)
-                    *(ch + 1) -= 10;
-                else
-                    *(ch + 1) = 0;
-            }
-            else
-            {
-                if (*(ch + 1) > 0)
-                    *(ch + 1) -= 1;
-            }
+	    if (sw_wait_free_timer)
+		break;
+	    
+	    sw_wait_free_timer = 200;
+	    sw_fast++;
+	    
+	    if (sw_fast > 10)
+	    {
+		if (*(ch + 1) > 10)
+		    *(ch + 1) -= 10;
+		else
+		    *(ch + 1) = 0;
+	    }
+	    else if (sw_fast > 5)
+	    {
+		if (*(ch + 1) > 5)
+		    *(ch + 1) -= 5;
+		else
+		    *(ch + 1) = 0;
+	    }
+	    else
+	    {
+		if (*(ch + 1) > 0)
+		    *(ch + 1) -= 1;
+	    }
 
 	    if (program == CCT1_MODE)
 	    {
@@ -375,6 +438,7 @@ resp_t ManualMode_2Ch (parameters_typedef * mem, sw_actions_t action)
 	    }
 	    manual_need_display_update = 1;
             show_option = 1;
+	    mm_menu_cntr_out = CNTR_TO_OUT;
             manual_mode_2ch_timer = TT_SHOW_OPTIONS;
             resp = resp_change;            
         }

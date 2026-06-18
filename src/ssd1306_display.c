@@ -435,11 +435,20 @@ void display_update_int_state_machine (void)
     case DISPLAY_UPDATE_SEND_PAGE_END:
         if (display_check_end())        
         {
+#ifdef OLED_128_64
             if (d_update_page < 7)
             {
                 d_update_page++;
                 d_update_st = DISPLAY_UPDATE_SET_PAGE_CMD_0;
             }
+#endif
+#ifdef OLED_128_32
+            if (d_update_page < 3)
+            {
+                d_update_page++;
+                d_update_st = DISPLAY_UPDATE_SET_PAGE_CMD_0;
+            }
+#endif
             else
             {
                 if (d_update_post_update)

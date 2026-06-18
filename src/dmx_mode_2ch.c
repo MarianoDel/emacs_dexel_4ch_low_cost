@@ -63,6 +63,9 @@ extern volatile unsigned short mode_effect_timer;
 extern volatile unsigned short dmx_rx_timer;
 extern unsigned char mode_cntr_out;
 extern unsigned char mode_show_options;
+extern volatile unsigned char sw_wait_free_timer;
+extern unsigned char sw_fast;
+
 
 // variables re-use
 #define dmx_mode_2ch_state    mode_state
@@ -92,6 +95,10 @@ void Dmx_Mode_2Ch_UpdateTimers (void)
 
     if (dmx_mode_dmx_receiving_timer)
         dmx_mode_dmx_receiving_timer--;
+
+    if (sw_wait_free_timer)
+        sw_wait_free_timer--;
+    
 }
 
 
@@ -302,13 +309,28 @@ resp_t Dmx_Mode_2Ch (parameters_typedef * mem, sw_actions_t actions)
     case DMX_MODE_2CH_CHANGE_ADDRESS:	
         paddr = &(mem->dmx_first_channel);
 
-	if ((sw == selection_up) ||
-            (sw == selection_up_fast))
+	if (sw == selection_none)
+	    sw_fast = 0;
+	
+	if (sw == selection_up)
         {
-            if (sw == selection_up_fast)
-            {
+	    if (sw_wait_free_timer)
+		break;
+	    
+	    sw_wait_free_timer = 200;
+	    sw_fast++;
+
+	    if (sw_fast > 10)
+	    {
 		if (*paddr < 512 - mem->dmx_channel_quantity - 1 -10)
                     *paddr += 10;
+		else
+		    *paddr = 512 - mem->dmx_channel_quantity - 1;
+            }
+	    else if (sw_fast > 5)
+	    {
+		if (*paddr < 512 - mem->dmx_channel_quantity - 1 -5)
+                    *paddr += 5;
 		else
 		    *paddr = 512 - mem->dmx_channel_quantity - 1;
             }
@@ -322,19 +344,31 @@ resp_t Dmx_Mode_2Ch (parameters_typedef * mem, sw_actions_t actions)
 	    sprintf(s_temp, "D%03d", mem->dmx_first_channel);
 	    SCREEN_Text4_Line1(s_temp);
 
+	    DMX_channel_selected = mem->dmx_first_channel;
 	    dmx_need_display_update = 1;	    
             show_option = 1;
             dmx_mode_2ch_timer = TT_SHOW_OPTIONS;
-            resp = resp_change;
         }
 
-        if ((sw == selection_dwn) ||
-            (sw == selection_dwn_fast))
+        if (sw == selection_dwn)
         {
-            if (sw == selection_dwn_fast)
-            {
+	    if (sw_wait_free_timer)
+		break;
+	    
+	    sw_wait_free_timer = 200;
+	    sw_fast++;
+
+	    if (sw_fast > 10)
+	    {
 		if (*paddr > 10)
                     *paddr -= 10;
+		else
+		    *paddr = 1;
+            }
+	    else if (sw_fast > 5)
+	    {
+		if (*paddr > 5)
+                    *paddr -= 5;
 		else
 		    *paddr = 1;
             }
@@ -348,10 +382,10 @@ resp_t Dmx_Mode_2Ch (parameters_typedef * mem, sw_actions_t actions)
 	    sprintf(s_temp, "D%03d", mem->dmx_first_channel);
 	    SCREEN_Text4_Line1(s_temp);
 
+	    DMX_channel_selected = mem->dmx_first_channel;
 	    dmx_need_display_update = 1;	    
             show_option = 1;
             dmx_mode_2ch_timer = TT_SHOW_OPTIONS;
-            resp = resp_change;
         }
 
         if (!dmx_mode_2ch_timer)
@@ -377,7 +411,10 @@ resp_t Dmx_Mode_2Ch (parameters_typedef * mem, sw_actions_t actions)
         }
 
         if (!mm_menu_cntr_out)
+	{
             dmx_mode_2ch_state = DMX_MODE_2CH_INIT;
+	    resp = resp_need_to_save;
+	}
 
         break;
     }        
@@ -411,7 +448,6 @@ resp_t Dmx_Mode_2Ch (parameters_typedef * mem, sw_actions_t actions)
                 //     idle_pckt_cnt++;
 
                 resp = resp_change;
-                dmx_mode_2ch_update_values = 1;
             }
         }
     }

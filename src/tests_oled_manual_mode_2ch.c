@@ -33,6 +33,10 @@ unsigned short mode_effect_timer = 0;
 unsigned int timer_standby = 0;
 
 parameters_typedef mem;
+unsigned char mode_show_options = 0;
+unsigned char mode_cntr_out = 0;
+
+unsigned char dmx_local_data[4] = { 0 };
 
 
 // Globals ---------------------------------------------------------------------
@@ -63,7 +67,7 @@ gboolean Test_Main_Loop (gpointer user_data)
         mem.max_current_channels[2] = 120;
         mem.max_current_channels[3] = 64;
 
-	mem.dmx_channel_quantity = 1;
+	mem.dmx_channel_quantity = 2;
         mem.temp_prot_deg = 30;
         timer_standby = 1300;
 	printf("to setup 1\n");
@@ -93,6 +97,45 @@ gboolean Test_Main_Loop (gpointer user_data)
         if (resp == resp_change)
         {
             printf("resp_change\n");
+
+	    printf("mem.fixed_channels getted\n");
+	    for (int i = 0; i < 4; i++)
+		printf("mem.fixed_channels[%d]: %d\n", i, mem.fixed_channels[i]);
+	    
+	    unsigned short calc = 0;
+	    unsigned char bright = 0;
+	    unsigned char temp0 = 0;
+	    unsigned char temp1 = 0;
+
+	    // backup and bright temp calcs
+	    // ch0 the bright ch1 the temp
+	    bright = mem.fixed_channels[0];
+	    temp0 = 255 - mem.fixed_channels[1];
+	    temp1 = 255 - temp0;
+
+	    calc = temp0 * bright;
+	    calc >>= 8;
+
+	    if ((bright) && (temp0))
+		dmx_local_data[0] = (unsigned char) calc + 1;
+	    else
+		dmx_local_data[0] = 0;
+	    
+	    dmx_local_data[1] = dmx_local_data[0];
+	    
+	    calc = temp1 * bright;
+	    calc >>= 8;
+
+	    if ((bright) && (temp1))
+		dmx_local_data[2] = (unsigned char) calc + 1;
+	    else
+		dmx_local_data[2] = 0;
+
+	    dmx_local_data[3] = dmx_local_data[2];
+
+	    printf("dmx_local_data processed\n");	    
+	    for (int i = 0; i < 4; i++)
+		printf("dmx_local_data[%d]: %d\n", i, dmx_local_data[i]);
         }
 
         if (resp == resp_ok)

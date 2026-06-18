@@ -16,7 +16,7 @@
 
 // Module Private Types Constants and Macros -----------------------------------
 #define SWITCHES_TIMER_RELOAD    5
-#define SWITCHES_THRESHOLD_FULL	1000    //5 secs
+#define SWITCHES_THRESHOLD_FULL	2000    //10 secs
 #define SWITCHES_THRESHOLD_HALF	50    //250 ms
 #define SWITCHES_THRESHOLD_MIN	10    //50 ms
 #define SWITCHES_THRESHOLD_MIN_FAST    2    //10 ms

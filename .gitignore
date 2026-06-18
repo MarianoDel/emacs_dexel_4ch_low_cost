@@ -1,6 +1,7 @@
 #files to not save
 *.lst
 *.o
+*.*~
 *.out
 *.elf
 *.map

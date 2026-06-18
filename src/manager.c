@@ -28,6 +28,7 @@
 #include "manual_menu.h"
 #include "main_menu.h"
 #include "dmx_mode_2ch.h"
+#include "dmx_utils.h"
 #include "manual_mode_2ch.h"
 // #include "hard.h"
 
@@ -104,7 +105,7 @@ void Manager_Timeouts (void)
 }
 
 unsigned char packet_cnt = 0;
-unsigned char showing_temp = 0;
+// unsigned char showing_temp = 0;
 void Manager (parameters_typedef * pmem)
 {
     sw_actions_t action = selection_none;
@@ -217,79 +218,95 @@ void Manager (parameters_typedef * pmem)
         // Check encoder first
         action = CheckActions();
 
-        if (action != selection_back)
-        {            
-	    // Check kind of program, based on channels used
-	    if (pmem->dmx_channel_quantity == 1)
-	    {
-		// for now same as four ch
-		resp = Dmx_Menu (pmem, action);
-
-		if (resp == resp_change)
-		{
-		    dmx_local_data[1] = dmx_local_data[0];
-		    dmx_local_data[2] = dmx_local_data[0];
-		    dmx_local_data[3] = dmx_local_data[0];		    
-		    FiltersAndOffsets_Channels_to_Backup (dmx_local_data);
-		}
-	    }
-	    else if (pmem->dmx_channel_quantity == 2)
-	    {
-		resp = Dmx_Mode_2Ch (pmem, action);		
-		if ((resp == resp_change) ||
-		    (resp == resp_need_to_save))
-		{
-		    unsigned short calc = 0;
-		    unsigned char bright = 0;
-		    unsigned char temp0 = 0;
-		    unsigned char temp1 = 0;
-
-		    // backup and bright temp calcs
-		    // ch0 the bright ch1 the temp
-		    bright = *(dmx_local_data + 0);
-		    temp0 = 255 - *(dmx_local_data + 1);
-		    temp1 = 255 - temp0;
-
-		    if (bright)
-		    {
-			calc = temp0 * bright + 1;
-			calc >>= 8;
-			dmx_local_data[0] = (unsigned char) calc;
-			dmx_local_data[1] = dmx_local_data[0];
-
-			calc = temp1 * bright + 1;
-			calc >>= 8;
-			dmx_local_data[2] = (unsigned char) calc;
-			dmx_local_data[3] = dmx_local_data[2];
-		    }
-		    else
-		    {
-			dmx_local_data[0] = 0;
-			dmx_local_data[1] = 0;
-			dmx_local_data[2] = 0;
-			dmx_local_data[3] = 0;			
-		    }
-		    FiltersAndOffsets_Channels_to_Backup (dmx_local_data);                
-		}
-	    }
-	    else    // asumme 4 channels
-	    {
-		resp = Dmx_Menu (pmem, action);
-
-		if (resp == resp_change)
-		    FiltersAndOffsets_Channels_to_Backup (dmx_local_data);
-
-	    }
-
-	    // common to all modes
-            if (resp == resp_need_to_save)
-            {
-                need_to_save_timer = 10000;
-                need_to_save = 1;
-            }
-        }
-        else
+	if (action == selection_back)
+	{
             mngr_state = MNGR_ENTERING_MAIN_MENU;
+	    break;
+	}
+	
+	// Check kind of program, based on channels used
+	if (pmem->dmx_channel_quantity == 1)
+	{
+	    // for now same as four ch
+	    resp = Dmx_Menu (pmem, action);
+
+	    if (resp == resp_change)
+	    {
+		dmx_local_data[1] = dmx_local_data[0];
+		dmx_local_data[2] = dmx_local_data[0];
+		dmx_local_data[3] = dmx_local_data[0];		    
+		FiltersAndOffsets_Channels_to_Backup (dmx_local_data);
+	    }
+	}
+	else if (pmem->dmx_channel_quantity == 2)
+	{
+	    resp = Dmx_Mode_2Ch (pmem, action);		
+	    if (resp == resp_change)
+	    {
+		// original soft
+		// unsigned short calc = 0;
+		// unsigned char bright = 0;
+		// unsigned char temp0 = 0;
+		// unsigned char temp1 = 0;
+		// unsigned char local_data[4] = { 0 };
+
+		// // backup and bright temp calcs
+		// // ch0 the bright ch1 the temp
+		// bright = dmx_local_data[0];
+		// temp0 = 255 - dmx_local_data[1];
+		// temp1 = 255 - temp0;
+
+		// calc = temp0 * bright;
+		// calc >>= 8;
+
+		// if ((bright) && (temp0))
+		//     local_data[0] = (unsigned char) calc + 1;
+		// else
+		//     local_data[0] = 0;
+	    
+		// local_data[1] = local_data[0];
+	    
+		// calc = temp1 * bright;
+		// calc >>= 8;
+
+		// if ((bright) && (temp1))
+		//     local_data[2] = (unsigned char) calc + 1;
+		// else
+		//     local_data[2] = 0;
+
+		// local_data[3] = local_data[2];
+		// FiltersAndOffsets_Channels_to_Backup (local_data);		
+		// end of original soft
+		
+		// new soft
+		unsigned char local_data [4] = { 0 };
+		Bright_TempColor_To_Temp0_Temp1(dmx_local_data[0],
+						dmx_local_data[1],
+						&local_data[0],
+						&local_data[2]);
+
+		local_data[1] = local_data[0];
+		local_data[3] = local_data[2];
+
+		FiltersAndOffsets_Channels_to_Backup (local_data);
+		// end of new soft
+	    }
+	}
+	else    // asumme 4 channels
+	{
+	    resp = Dmx_Menu (pmem, action);
+
+	    if (resp == resp_change)
+		FiltersAndOffsets_Channels_to_Backup (dmx_local_data);
+
+	}
+
+	// common to all modes
+	if (resp == resp_need_to_save)
+	{
+	    need_to_save_timer = 10000;
+	    need_to_save = 1;
+	}
 
         // Manual mode autodetection
         if (Dmx_Menu_GetPacketsTimer () == 0)
@@ -318,54 +335,90 @@ void Manager (parameters_typedef * pmem)
         if (action == selection_back)
             Usart2Send("selection back\n");
 #endif                
-        
-        if (action != selection_back)
-        {
-	    // Check kind of program, based on channels used
-	    if (pmem->dmx_channel_quantity == 1)
-	    {
-		// for now same as four ch
-		resp = Manual_Menu (pmem, action);		
-		if ((resp == resp_change) ||
-		    (resp == resp_need_to_save))
-		{
-		    dmx_local_data[1] = dmx_local_data[0];
-		    dmx_local_data[2] = dmx_local_data[0];
-		    dmx_local_data[3] = dmx_local_data[0];		    
-		    FiltersAndOffsets_Channels_to_Backup (dmx_local_data);                
-		}
-	    }
-	    else if (pmem->dmx_channel_quantity == 2)
-	    {
-		resp = ManualMode_2Ch (pmem, action);		
-		if ((resp == resp_change) ||
-		    (resp == resp_need_to_save))
-		{
-		    dmx_local_data[1] = dmx_local_data[0];
-		    dmx_local_data[2] = dmx_local_data[0];
-		    dmx_local_data[3] = dmx_local_data[0];		    
-		    FiltersAndOffsets_Channels_to_Backup (dmx_local_data);                
-		}
-	    }
-	    else    // asumme 4 channels
-	    {
-		resp = Manual_Menu (pmem, action);
-		if ((resp == resp_change) ||
-		    (resp == resp_need_to_save))
-		{
-		    FiltersAndOffsets_Channels_to_Backup (dmx_local_data);                
-		}
-	    }
 
-	    // common to all modes
-            if (resp == resp_need_to_save)
-            {
-                need_to_save_timer = 10000;
-                need_to_save = 1;
-            }
-        }
-        else
+	if (action == selection_back)
+	{
             mngr_state = MNGR_ENTERING_MAIN_MENU;
+	    break;
+	}
+	
+	// Check kind of program, based on channels used
+	if (pmem->dmx_channel_quantity == 1)
+	{
+	    // for now same as four ch
+	    resp = Manual_Menu (pmem, action);		
+	    if ((resp == resp_change) ||
+		(resp == resp_need_to_save))
+	    {
+		dmx_local_data[1] = dmx_local_data[0];
+		dmx_local_data[2] = dmx_local_data[0];
+		dmx_local_data[3] = dmx_local_data[0];		    
+		FiltersAndOffsets_Channels_to_Backup (dmx_local_data);                
+	    }
+	}
+	else if (pmem->dmx_channel_quantity == 2)
+	{
+	    resp = ManualMode_2Ch (pmem, action);		
+	    if (resp == resp_change)
+	    {
+		// unsigned short calc = 0;
+		// unsigned char bright = 0;
+		// unsigned char temp0 = 0;
+		// unsigned char temp1 = 0;
+
+		// backup and bright temp calcs
+		// ch0 the bright ch1 the temp
+		// bright = pmem->fixed_channels[0];
+		// temp0 = 255 - pmem->fixed_channels[1];
+		// temp1 = 255 - temp0;
+
+		// calc = temp0 * bright;
+		// calc >>= 8;
+
+		// if ((bright) && (temp0))
+		//     dmx_local_data[0] = (unsigned char) calc + 1;
+		// else
+		//     dmx_local_data[0] = 0;
+	    
+		// dmx_local_data[1] = dmx_local_data[0];
+	    
+		// calc = temp1 * bright;
+		// calc >>= 8;
+
+		// if ((bright) && (temp1))
+		//     dmx_local_data[2] = (unsigned char) calc + 1;
+		// else
+		//     dmx_local_data[2] = 0;
+
+		// dmx_local_data[3] = dmx_local_data[2];
+
+		Bright_TempColor_To_Temp0_Temp1(pmem->fixed_channels[0],
+						pmem->fixed_channels[1],
+						&dmx_local_data[0],
+						&dmx_local_data[2]);
+
+		dmx_local_data[1] = dmx_local_data[0];
+		dmx_local_data[3] = dmx_local_data[2];
+		
+		FiltersAndOffsets_Channels_to_Backup (dmx_local_data);                
+	    }
+	}
+	else    // asumme 4 channels
+	{
+	    resp = Manual_Menu (pmem, action);
+	    if ((resp == resp_change) ||
+		(resp == resp_need_to_save))
+	    {
+		FiltersAndOffsets_Channels_to_Backup (dmx_local_data);                
+	    }
+	}
+
+	// common to all modes
+	if (resp == resp_need_to_save)
+	{
+	    need_to_save_timer = 10000;
+	    need_to_save = 1;
+	}
 
         // Dmx presence autodetection
         if (dmx_receive_flag)
